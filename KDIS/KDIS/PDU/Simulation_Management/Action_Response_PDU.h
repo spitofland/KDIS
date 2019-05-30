@@ -78,6 +78,12 @@ public:
     KDIS::DATA_TYPE::ENUMS::RequestStatus GetRequestStatus() const;
 
     //************************************
+    // FullName:    KDIS::PDU::Action_Response_PDU::Clear
+    // Description: Clears both the fixed and variable datum records, and reset the PDU length
+    //************************************
+    virtual void Clear( ) override;
+
+    //************************************
     // FullName:    KDIS::PDU::Action_Response_PDU::GetAsString
     // Description: Returns a string representation of the PDU.
     //************************************

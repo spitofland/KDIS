@@ -122,13 +122,13 @@ EnvironmentRecordPtr EnvironmentRecord::FactoryDecodeEnvironmentRecord( KDataStr
     // We now need to "peak" at the next 4 bytes to determine the Environment Record type,
     // once we have determined the type we need to return the buffers write positon as this
     // field needs to be re-read by the decode function of the derived Environment Record.
-    KUINT16 ui16CurrentWritePos = stream.GetCurrentWritePosition();
+	KSIZE_T ui16CurrentWritePos = stream.GetCurrentReadPosition();
 
     KUINT32 ui32RecType;
     stream >> ui32RecType;
 
     // We now know what type of record we should create, we need to reset the buffer so this value can be re-read.
-    stream.SetCurrentWritePosition( ui16CurrentWritePos );
+    stream.SetCurrentReadPosition( ui16CurrentWritePos );
 
 	// Check for a custom decoder, if none if found then use one of our standard data types.
 	EnvironmentRecord * pRec = FactoryDecode( ui32RecType, stream );
@@ -142,29 +142,29 @@ EnvironmentRecordPtr EnvironmentRecord::FactoryDecodeEnvironmentRecord( KDataStr
 		//
 		// Geometry Records
 		//
-		case PointRecord1Type:                  return new PointRecord1( stream );
-		case PointRecord2Type:                  return new PointRecord2( stream );
-		case LineRecord1Type:                   return new LineRecord1( stream );
-		case LineRecord2Type:                   return new LineRecord2( stream );
-		case BoundingSphereRecordType:          return new BoundingSphereRecord( stream );
-		case SphereRecord1Type:                 return new SphereRecord1( stream );
-		case SphereRecord2Type:                 return new SphereRecord2( stream );
-		case EllipsoidRecord1Type:              return new EllipsoidRecord1( stream );
-		case EllipsoidRecord2Type:              return new EllipsoidRecord2( stream );
-		case ConeRecord1Type:                   return new ConeRecord1( stream );
-		case ConeRecord2Type:                   return new ConeRecord2( stream );
+		case PointRecord1Type:                  return KDIS_MAKE_REF( PointRecord1, stream );
+		case PointRecord2Type:                  return KDIS_MAKE_REF( PointRecord2, stream );
+		case LineRecord1Type:                   return KDIS_MAKE_REF( LineRecord1, stream );
+		case LineRecord2Type:                   return KDIS_MAKE_REF( LineRecord2, stream );
+		case BoundingSphereRecordType:          return KDIS_MAKE_REF( BoundingSphereRecord, stream );
+		case SphereRecord1Type:                 return KDIS_MAKE_REF( SphereRecord1, stream );
+		case SphereRecord2Type:                 return KDIS_MAKE_REF( SphereRecord2, stream );
+		case EllipsoidRecord1Type:              return KDIS_MAKE_REF( EllipsoidRecord1, stream );
+		case EllipsoidRecord2Type:              return KDIS_MAKE_REF( EllipsoidRecord2, stream );
+		case ConeRecord1Type:                   return KDIS_MAKE_REF( ConeRecord1, stream );
+		case ConeRecord2Type:                   return KDIS_MAKE_REF( ConeRecord2, stream );
 		case UniformGeometryRecordType:         throw KException( __FUNCTION__, UNSUPPORTED_DATATYPE, "UniformGeometryRecordType" ); // We don't know how to decode this type.	    
-		case RectangularVolumeRecord1Type:      return new RectangularVolumeRecord1( stream );
-		case RectangularVolumeRecord2Type:      return new RectangularVolumeRecord2( stream );
-		case GaussianPlumeRecordType:           return new GaussianPlumeRecord( stream );
-		case GaussianPuffRecordType:            return new GaussianPuffRecord( stream );
-		case RectangularVolumeRecord3Type:      return new RectangularVolumeRecord3( stream );
+		case RectangularVolumeRecord1Type:      return KDIS_MAKE_REF( RectangularVolumeRecord1, stream );
+		case RectangularVolumeRecord2Type:      return KDIS_MAKE_REF( RectangularVolumeRecord2, stream );
+		case GaussianPlumeRecordType:           return KDIS_MAKE_REF( GaussianPlumeRecord, stream );
+		case GaussianPuffRecordType:            return KDIS_MAKE_REF( GaussianPuffRecord, stream );
+		case RectangularVolumeRecord3Type:      return KDIS_MAKE_REF( RectangularVolumeRecord3, stream );
 
 		//
 		// State Records
 		//
-		case COMBICStateType:                   return new COMBICState( stream );
-		case FlareStateType:                    return new FlareState( stream );
+		case COMBICStateType:                   return KDIS_MAKE_REF( COMBICState, stream );
+		case FlareStateType:                    return KDIS_MAKE_REF( FlareState, stream );
 		default:                                throw KException( __FUNCTION__, UNSUPPORTED_DATATYPE, ui32RecType ); // We don't know how to decode this type.
     }    
 }

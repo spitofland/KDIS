@@ -118,6 +118,8 @@ typedef std::stringstream KStringStream;
 
 typedef bool KBOOL;
 
+typedef size_t KSIZE_T;
+
 /************************************************************************/
 /* Error Code Definitions                                               */
 /************************************************************************/

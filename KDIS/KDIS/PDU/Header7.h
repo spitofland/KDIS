@@ -142,33 +142,28 @@ namespace PDU {
 class KDIS_EXPORT Header7 : public Header6
 {
 protected:
+	union
+	{
+		struct
+		{
+			KUINT8 m_ui8PDUStatusTEI : 1;                   // Bit  0.
+			KUINT8 m_ui8PDUStatusLVC : 2;                   // Bits 1-2.
+			KUINT8 m_ui8PDUStatusCEI : 1;                   // Bit  3.
+			KUINT8 m_ui8PDUStatusFTI : 1;                   // Bit  4.
+			KUINT8 m_ui8PDUStatusBit5 : 1;                  // Bit  5.
+			KUINT8 m_ui8PDUStatusBit6 : 1;                  // Bit  6. Unused.
+			KUINT8 m_ui8PDUStatusSM : 1;                    // Bit  7.
+		};
+		struct
+		{
+			KUINT8 m_uPadding1 : 4;                         // padding
+			KUINT8 m_ui8PDUStatusDTI_RAI_IAI : 2;           // Bit  4-5.
+			KUINT8 m_uPadding2 : 2;                         // padding
+		};
+		KUINT8 m_ui8PDUStatus; 
 
-    union
-    {
-        struct
-        {
-            KUINT8 m_ui8PDUStatusTEI : 1;                   // Bit  0.
-            KUINT8 m_ui8PDUStatusLVC : 2;                   // Bits 1-2.
-            KUINT8 m_ui8PDUStatusCEI : 1;                   // Bit  3.
+	} m_PDUStatusUnion;
 
-            union
-            {
-                struct
-                {
-                    KUINT8 m_ui8PDUStatusFTI  : 1;        // Bit  4.
-                    KUINT8 m_ui8PDUStatusBit5 : 1;        // Bit  5.
-                };
-
-                KUINT8 m_ui8PDUStatusDTI_RAI_IAI : 2;        // Bits 4-5. Could be used for DTI, RAI or IAI.
-            };
-
-            KUINT8 m_ui8PDUStatusBit6 : 1;                      // Bit  6. Unused.
-            KUINT8 m_ui8PDUStatusSM   : 1;                      // Bit  7.
-        };
-
-        KUINT8 m_ui8PDUStatus;
-
-    } m_PDUStatusUnion;
 
 public:
 

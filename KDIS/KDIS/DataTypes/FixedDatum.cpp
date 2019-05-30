@@ -84,7 +84,7 @@ KString FixedDatum::GetAsString() const
 {
     KStringStream ss;
 
-    NetToKUINT32 NetToSys( m_cDatumValue, false );
+    NetToKUINT32 NetToSys( m_cDatumValue, !IsMachineBigEndian() );
 
     // TODO: maybe determine what the data type should be when printing out, this
     // could be a lot of work.

@@ -53,7 +53,11 @@ namespace DATA_TYPE {
 // pointer or one of your own then simply change it below.
 /************************************************************************/
 class LayerHeader;
+#ifdef KDIS_CPP11
+typedef std::shared_ptr<LayerHeader> LyrHdrPtr; // Ref counter
+#else
 typedef KDIS::UTILS::KRef_Ptr<LayerHeader> LyrHdrPtr; // Ref counter
+#endif
 //typedef VaLayerHeaderLyrHdrPtr; // Weak ref	
 
 class KDIS_EXPORT LayerHeader : public DataTypeBase

@@ -56,15 +56,19 @@ using std::vector;
 
 class KDIS_EXPORT Comment_PDU : public Simulation_Management_Header
 {
+public:
+    typedef std::vector<KDIS::DATA_TYPE::FixDtmPtr> fixed_datum_ctor;
+    typedef std::vector<KDIS::DATA_TYPE::VarDtmPtr> var_datum_ctor;
+
 protected:
 
     KUINT32 m_ui32NumFixedDatum;
 
     KUINT32 m_ui32NumVariableDatum;
 
-    std::vector<KDIS::DATA_TYPE::FixDtmPtr> m_vFixedDatum;
+    fixed_datum_ctor m_vFixedDatum;
 
-    std::vector<KDIS::DATA_TYPE::VarDtmPtr> m_vVariableDatum;
+    var_datum_ctor m_vVariableDatum;
 
 public:
 
@@ -86,7 +90,7 @@ public:
     // FullName:    KDIS::PDU::Comment_PDU::GetNumberFIxedDatum
     // Description: Returns number of fixed datum records
     //************************************
-    KUINT32 GetNumberFIxedDatum() const;
+    KUINT32 GetNumberFixedDatum() const;
 
     //************************************
     // FullName:    KDIS::PDU::Comment_PDU::GetNumberVariableDatum
@@ -95,14 +99,30 @@ public:
     KUINT32 GetNumberVariableDatum() const;
 
     //************************************
+    // FullName:    KDIS::PDU::Comment_PDU::IsEmpty
+    // Description: Indicates the both the fixed and variable datum 
+    //              records are empty. Useful to determine if a PDU
+    //              is worth publishing on the network. 
+    //************************************
+    bool IsEmpty( );
+
+    //************************************
+    // FullName:    KDIS::PDU::Comment_PDU::Clear
+    // Description: Clears both the fixed and variable datum records
+    //************************************
+    virtual void Clear( );
+
+    //************************************
     // FullName:    KDIS::PDU::Comment_PDU::AddFixedDatum
     //              KDIS::PDU::Comment_PDU::SetFixedDatum
     //              KDIS::PDU::Comment_PDU::GetFixedDatum
     // Description: Add, get fixed datums
+    //              The insert function first looks if the datum already exists,
+    //              and if so, replaces it. 
     // Parameter:   FixedDatum FD, const vector<FixDtmPtr> & FD
     //************************************
     void AddFixedDatum( KDIS::DATA_TYPE::FixDtmPtr FD );
-    void SetFixedDatum( const std::vector<KDIS::DATA_TYPE::FixDtmPtr> & FD );
+    void SetFixedDatum( const fixed_datum_ctor & FD );
     const std::vector<FixDtmPtr> & GetFixedDatum() const;
 
     //************************************
@@ -113,7 +133,7 @@ public:
     // Parameter:   VarDtmPtr VD, const vector<VarDtmPtr> & VD
     //************************************
     void AddVariableDatum( KDIS::DATA_TYPE::VarDtmPtr VD );
-    virtual void SetVariableDatum( const std::vector<KDIS::DATA_TYPE::VarDtmPtr> & VD );
+    virtual void SetVariableDatum( const var_datum_ctor & VD );
     const std::vector<VarDtmPtr> & GetVariableDatum() const;
 
     //************************************

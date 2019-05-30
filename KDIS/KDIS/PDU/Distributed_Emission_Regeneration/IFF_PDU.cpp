@@ -375,7 +375,7 @@ void IFF_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= true*/ ) throw
 
 		if( layer )
 		{
-			m_vLayers.push_back( layer );
+			m_vLayers.push_back( LyrHdrPtr( layer ) );
 			remainingData -= layer->GetLayerLength();
 		}
 		else

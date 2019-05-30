@@ -53,7 +53,11 @@ namespace DATA_TYPE {
 // pointer or one of your own then simply change it below.
 /************************************************************************/
 class EnvironmentRecord;
+#ifdef KDIS_CPP11
+typedef std::shared_ptr<EnvironmentRecord> EnvironmentRecordPtr; // Ref counter
+#else
 typedef KDIS::UTILS::KRef_Ptr<EnvironmentRecord> EnvironmentRecordPtr; // Ref counter
+#endif
 //typedef EnvironmentRecord* EnvironmentRecordPtr; // Weak ref
 
 class KDIS_EXPORT EnvironmentRecord : public DataTypeBase, public FactoryDecoderUser<EnvironmentRecord>

@@ -56,7 +56,11 @@ namespace DATA_TYPE {
 // pointer or one of your own then simply change it below.
 /************************************************************************/
 class StandardVariable;
+#ifdef KDIS_CPP11
+typedef std::shared_ptr<StandardVariable> StdVarPtr; // Ref counter
+#else
 typedef KDIS::UTILS::KRef_Ptr<StandardVariable> StdVarPtr; // Ref counter
+#endif
 //typedef StandardVariable* StdVarPtr; // Weak ref
 
 class KDIS_EXPORT StandardVariable : public DataTypeBase, public FactoryDecoderUser<StandardVariable>

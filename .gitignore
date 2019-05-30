@@ -62,3 +62,7 @@ KDIS/CMakeFiles/
 *.rej
 *.xml
 *.lastcodeanalysissucceeded
+
+include/
+bin/
+lib/

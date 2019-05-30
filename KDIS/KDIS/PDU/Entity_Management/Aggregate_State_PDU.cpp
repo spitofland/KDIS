@@ -697,12 +697,12 @@ void Aggregate_State_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= tr
     for( KUINT16 n = 0; n < m_ui32NumVariableDatum; ++n )
     {
         // Save the current write position so we can peek.
-        KUINT16 pos = stream.GetCurrentWritePosition();
+		KSIZE_T pos = stream.GetCurrentReadPosition();
         KUINT32 datumID;
 
         // Extract the datum id then reset the stream.
         stream >> datumID;
-        stream.SetCurrentWritePosition( pos );
+        stream.SetCurrentReadPosition( pos );
 
         // Use the factory decoder.
         VariableDatum * p = VariableDatum::FactoryDecode( datumID, stream );
@@ -715,7 +715,7 @@ void Aggregate_State_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= tr
         else
         {
             // Default
-            m_vVD.push_back( VarDtmPtr( new VariableDatum( stream ) ) );
+            m_vVD.push_back( KDIS_MAKE_REF( VariableDatum, stream ) );
         }
     }
 }

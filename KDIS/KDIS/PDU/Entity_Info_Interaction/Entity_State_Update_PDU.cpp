@@ -288,12 +288,12 @@ void Entity_State_Update_PDU::Decode( KDataStream & stream, bool ignoreHeader /*
     for( KUINT8 i = 0; i < m_ui8NumOfVariableParams; ++i )
     {
         // Save the current write position so we can peek.
-        KUINT16 pos = stream.GetCurrentWritePosition();
+		KSIZE_T pos = stream.GetCurrentReadPosition();
         KUINT8 paramTyp;
 
         // Extract the  type then reset the stream.
         stream >> paramTyp;
-        stream.SetCurrentWritePosition( pos );
+        stream.SetCurrentReadPosition( pos );
 
         // Use the factory decoder.
         VariableParameter * p = VariableParameter::FactoryDecode( paramTyp, stream );
@@ -309,15 +309,15 @@ void Entity_State_Update_PDU::Decode( KDataStream & stream, bool ignoreHeader /*
             switch( paramTyp )
             {
                 case ArticulatedPartType:
-                    m_vVariableParameters.push_back( VarPrmPtr( new ArticulatedPart( stream ) ) );
+                    m_vVariableParameters.push_back( KDIS_MAKE_REF( ArticulatedPart, stream ) );
                     break;
 
                 case AttachedPartType:
-                    m_vVariableParameters.push_back( VarPrmPtr( new AttachedPart( stream ) ) );
+                    m_vVariableParameters.push_back( KDIS_MAKE_REF( AttachedPart, stream ) );
                     break;
 
                 default:
-                    m_vVariableParameters.push_back( VarPrmPtr( new VariableParameter( stream ) ) );
+                    m_vVariableParameters.push_back( KDIS_MAKE_REF( VariableParameter, stream ) );
                     break;
             }
         }

@@ -296,31 +296,31 @@ void IsGroupOf_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= true*/ )
         switch( m_ui8GrpdEntCat )
         {
         case BasicGroundCombatVehicleGEC:
-            m_vpGED.push_back( GEDItem( new GED_BasicGroundCombatVehicle( stream ) ) );
+            m_vpGED.push_back( KDIS_MAKE_REF( GED_BasicGroundCombatVehicle, stream ) );
             break;
         case EnhancedGroundCombatVehicleGEC:
-            m_vpGED.push_back( GEDItem( new GED_EnhancedGroundCombatVehicle( stream ) ) );
+            m_vpGED.push_back( KDIS_MAKE_REF( GED_EnhancedGroundCombatVehicle, stream ) );
             break;
         case BasicGroundCombatSoldierGEC:
-            m_vpGED.push_back( GEDItem( new GED_BasicGroundCombatSoldier( stream ) ) );
+            m_vpGED.push_back( KDIS_MAKE_REF( GED_BasicGroundCombatSoldier, stream ) );
             break;
         case EnhancedGroundCombatSoldierGEC:
-            m_vpGED.push_back( GEDItem( new GED_EnhancedGroundCombatSoldier( stream ) ) );
+            m_vpGED.push_back( KDIS_MAKE_REF( GED_EnhancedGroundCombatSoldier, stream ) );
             break;
         case BasicRotorWingAircraftGEC:
-            m_vpGED.push_back( GEDItem( new GED_BasicRotorWingAircraft( stream ) ) );
+            m_vpGED.push_back( KDIS_MAKE_REF( GED_BasicRotorWingAircraft, stream ) );
             break;
         case EnhancedRotorWingAircraftGEC:
-            m_vpGED.push_back( GEDItem( new GED_EnhancedRotaryWingAircraft( stream ) ) );
+            m_vpGED.push_back( KDIS_MAKE_REF( GED_EnhancedRotaryWingAircraft, stream ) );
             break;
         case BasicFixedWingAircraftGEC:
-            m_vpGED.push_back( GEDItem( new GED_BasicFixedWingAircraft( stream ) ) );
+            m_vpGED.push_back( KDIS_MAKE_REF( GED_BasicFixedWingAircraft, stream ) );
             break;
         case EnhancedFixedWingAircraftGEC:
-            m_vpGED.push_back( GEDItem( new GED_EnhancedFixedWingAircraft( stream ) ) );
+            m_vpGED.push_back( KDIS_MAKE_REF( GED_EnhancedFixedWingAircraft, stream ) );
             break;
         case GroundLogisticsVehicleGEC:
-            m_vpGED.push_back( GEDItem( new GED_GroundLogisticsVehicle( stream ) ) );
+            m_vpGED.push_back( KDIS_MAKE_REF( GED_GroundLogisticsVehicle, stream ) );
             break;
         }
         ++i;

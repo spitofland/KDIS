@@ -64,284 +64,320 @@ purpose:    Implementation of a referenced smart pointer.
 
 #include "./../KDefines.h"
 
-namespace KDIS {
-namespace UTILS {
+/// Is C++11 supported?
+#if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1800)
+#define KDIS_CPP11
+#endif
 
-typedef KDIS::KUINT16 RefCounter; // Change the counter to KUINT32 if you expect to have over 65,535 references.
+// Use std::shared_ptr<> instead of KRef_Ptr<>
+#ifdef KDIS_CPP11
 
-template<class Type>
-class KRef_Ptr
-{
-private:
+    #include <memory>
+    #define KDIS_MAKE_REF( type, ... ) std::make_shared<type>( __VA_ARGS__ )
 
-    typedef KRef_Ptr<Type> ThisType;
+#else 
 
-    Type * m_pRef;
+    #define KDIS_MAKE_REF( type, ... ) new type( __VA_ARGS__ )
 
-    RefCounter * m_piCount;
+    namespace KDIS {
+    namespace UTILS {
 
-    //************************************
-    // FullName:    KRef_Ptr<Type>::ref
-    // Description: Increments reference counter
-    //************************************
-    void ref()
+    typedef KDIS::KUINT16 RefCounter; // Change the counter to KUINT32 if you expect to have over 65,535 references.
+
+    template<class Type>
+    struct KDefaultDelete
     {
-        if( m_pRef )++( *m_piCount );
-    };
+        // default construct
+        KDefaultDelete() { }
 
-    //************************************
-    // FullName:    KRef_Ptr<Type>::unRef
-    // Description: Decrements reference counter, cleans
-    //              up if no other references exist.
-    //************************************
-    void unRef()
-    {
-        if( m_pRef )
+        // delete a pointer
+        void operator()(Type* ptr) const
         {
-            --( *m_piCount );
-            if( *m_piCount == 0 )
-            {
-                delete m_piCount;
-                delete m_pRef;
-                m_piCount = NULL;
-                m_pRef = NULL;
-            }
+            delete ptr;
         }
     };
 
-public:
-
-    KRef_Ptr() :
-        m_pRef( NULL ),
-        m_piCount( NULL )
+    template<class Type, class Deleter = KDefaultDelete<Type>>
+    class KRef_Ptr
     {
+    private:
+
+        typedef KRef_Ptr<Type>  ThisType;
+        typedef Deleter         ThisDeleter;
+
+        Type * m_pRef;
+
+        RefCounter * m_piCount;
+
+        //************************************
+        // FullName:    KRef_Ptr<Type>::ref
+        // Description: Increments reference counter
+        //************************************
+        void ref()
+        {
+            if( m_pRef )++( *m_piCount );
+        };
+
+        //************************************
+        // FullName:    KRef_Ptr<Type>::unRef
+        // Description: Decrements reference counter, cleans
+        //              up if no other references exist.
+        //************************************
+        void unRef()
+        {
+            if( m_pRef )
+            {
+                --( *m_piCount );
+                if( *m_piCount == 0 )
+                {
+                    delete m_piCount;
+                    ThisDeleter()( m_pRef );
+                    m_piCount = NULL;
+                    m_pRef = NULL;
+                }
+            }
+        };
+
+    public:
+
+        KRef_Ptr() :
+            m_pRef( NULL ),
+            m_piCount( NULL )
+        {
+        };
+
+        KRef_Ptr( Type * p )
+        {
+            m_pRef = p;
+            m_piCount = new RefCounter;
+            *m_piCount = 0;
+            ref();
+        };
+
+        KRef_Ptr( const KRef_Ptr<Type> & p ) :
+            m_pRef( p.m_pRef ),
+            m_piCount( p.m_piCount )
+        {
+            ref();
+        };
+
+        virtual ~KRef_Ptr()
+        {
+            unRef();
+        };
+
+        //************************************
+        // FullName:    KRef_Ptr<Type>::Clear
+        // Description: Removes the current reference held.
+        //************************************
+        void Clear()
+        {
+            unRef();
+            m_pRef = NULL;
+            m_piCount = NULL;
+        };
+
+        //************************************
+        // FullName:    KRef_Ptr<Type>::GetPtr
+        // Description: Returns pointer to the current reference
+        //              or NULL if no reference exists.
+        //              Note: The returned pointer will not be safe. Avoid using this function.
+        //************************************
+        Type * GetPtr() const
+        {
+            return m_pRef;
+        };
+
+        //! from shared_ptr<>::get
+        Type * get() const
+        {
+            return m_pRef;
+        };
+
+        //************************************
+        // FullName:    KRef_Ptr<Type>::GetCount
+        // Description: Returns number of reference that currently exist
+        //              for this pointer or 0 if no reference is held.
+        //************************************
+        RefCounter GetCount() const
+        {
+            if( m_piCount )return *m_piCount;
+        };
+
+        //************************************
+        // FullName:    KRef_Ptr<Type>::operator=
+        // Description: Assignment of an other KRef_Ptr.
+        // Parameter:   const KRef_Ptr<Type> & p
+        //************************************
+        KRef_Ptr<Type> & operator=( const KRef_Ptr<Type> & p )
+        {
+            if( m_pRef == p.m_pRef )return *this;
+            unRef();
+            m_pRef = p.m_pRef;
+            m_piCount = p.m_piCount;
+            ref();
+            return *this;
+        };
+
+        //************************************
+        // FullName:    KRef_Ptr<Other>::operator=
+        // Description: Assignment of an other KRef_Ptr of a different type.
+        // Parameter:   const KRef_Ptr<Other> & p
+        //************************************
+        template<class Other>
+        KRef_Ptr<Type> & operator=( const KRef_Ptr<Other> & p )
+        {
+            unRef();
+            m_pRef = p.m_pRef;
+            m_piCount = p.m_piCount;
+            ref();
+            return *this;
+        };
+
+        //************************************
+        // FullName:    KRef_Ptr<Type>::operator=
+        // Description: Assignment of a new reference.
+        // Parameter:   Type * p
+        //************************************
+        KRef_Ptr<Type> & operator=( Type * p )
+        {
+            if( m_pRef == p )return *this;
+            unRef();
+            m_pRef = p;
+            m_piCount = new RefCounter;
+            *m_piCount = 0;
+            ref();
+            return *this;
+        };
+
+        //************************************
+        // FullName:    KRef_Ptr<Other>::operator=
+        // Description: Assignment of a new reference of a different type.
+        // Parameter:   Other * p
+        //************************************
+        template<class Other>
+        KRef_Ptr<Type> & operator=( Other * p )
+        {
+            unRef();
+            m_pRef = p;
+            m_piCount = new RefCounter;
+            *m_piCount = 0;
+            ref();
+            return *this;
+        };
+
+        //************************************
+        // FullName:    KRef_Ptr<Type>::operator==
+        // Description: Comparison equals. Checks if both references are the same.
+        // Parameter:   const KRef_Ptr<Type> & p
+        //************************************
+        KBOOL operator==( const KRef_Ptr<Type> & p )const
+        {
+            return m_pRef == p.m_pRef;
+        };
+
+        //************************************
+        // FullName:    KRef_Ptr<Other>::operator==
+        // Description: Comparison equals. Checks if both references are the same of a
+        //              different type.
+        //              E.G An upast/downcast of the current type.
+        // Parameter:   const KRef_Ptr<Other> & p
+        //************************************
+        template<class Other>
+        KBOOL operator==( const KRef_Ptr<Other> & p )const
+        {
+            return m_pRef == p.m_pRef;
+        };
+
+        //************************************
+        // FullName:    KRef_Ptr<Type>::operator*
+        // Description: When referencing the KRef_Ptr return our referenced object.
+        //************************************
+        Type & operator*() const
+        {
+            return *m_pRef;
+        };
+
+        //************************************
+        // FullName:    KRef_Ptr<Type>::operator Type *
+        // Description: Implicit conversion support.
+        //************************************
+        operator Type *()
+        {
+            return m_pRef;
+        }
+
+        //************************************
+        // FullName:    KRef_Ptr<Type>::operator->
+        // Description: Returns the referenced pointer.
+        //************************************
+        Type * operator->() const
+        {
+            return m_pRef;
+        };
+
+        //************************************
+        // FullName:    KRef_Ptr<Type>::operator!=
+        // Description: Comparison does not equals. Compares the referenced pointer to an unsafe pointer.
+        // Parameter:   const Type * p
+        //************************************
+        KBOOL operator!= ( const Type * p ) const
+        {
+            return m_pRef != p;
+        };
+
+        //************************************
+        // FullName:    KRef_Ptr<Other>::operator!=
+        // Description: Comparison does not equals. Compares the referenced pointer to an unsafe pointer of a different type.
+        //              E.G a derrived type.
+        // Parameter:   const Other * p
+        //************************************
+        template<class Other>
+        KBOOL operator!= ( const Other * p ) const
+        {
+            return m_pRef != p;
+        };
+
+        //************************************
+        // FullName:    KRef_Ptr<Type>::operator!=
+        // Description: Comparison does not equals. Compares the referenced pointer to an other KRef_Ptr.
+        // Parameter:   const KRef_Ptr<Type> & p
+        //************************************
+        KBOOL operator!= ( const KRef_Ptr<Type> & p ) const
+        {
+            return m_pRef != p.m_pRef;
+        };
+
+        //************************************
+        // FullName:    KRef_Ptr<Other>::operator!=
+        // Description: Comparison does not equals. Compares the referenced pointer to an other KRef_Ptr of a different type.
+        // Parameter:   const KRef_Ptr<Other> & p
+        //************************************
+        template<class Other>
+        KBOOL operator!= ( const KRef_Ptr<Other> & p ) const
+        {
+            return m_pRef != p.m_pRef;
+        };
+
+        //************************************
+        // FullName:    KRef_Ptr<Type>::operator bool() const
+        // Description: This conversion operator allows KRef_Ptr objects to be used in boolean contexts, like if(p && p->valid()) {}.
+        //************************************
+        typedef Type * ThisType::*UnspecifiedBoolType;
+
+        operator UnspecifiedBoolType() const // never throws
+        {
+            return m_pRef == 0? 0: &ThisType::m_pRef;
+        }
+
+        // operator! is redundant, but some compilers need it
+        KBOOL operator! () const // never throws
+        {
+            return m_pRef == 0;
+        }
     };
 
-    KRef_Ptr( Type * p )
-    {
-        m_pRef = p;
-        m_piCount = new RefCounter;
-        *m_piCount = 0;
-        ref();
-    };
 
-    KRef_Ptr( const KRef_Ptr<Type> & p ) :
-        m_pRef( p.m_pRef ),
-        m_piCount( p.m_piCount )
-    {
-        ref();
-    };
-
-    virtual ~KRef_Ptr()
-    {
-        unRef();
-    };
-
-    //************************************
-    // FullName:    KRef_Ptr<Type>::Clear
-    // Description: Removes the current reference held.
-    //************************************
-    void Clear()
-    {
-        unRef();
-        m_pRef = NULL;
-        m_piCount = NULL;
-    };
-
-    //************************************
-    // FullName:    KRef_Ptr<Type>::GetPtr
-    // Description: Returns pointer to the current reference
-    //              or NULL if no reference exists.
-    //              Note: The returned pointer will not be safe. Avoid using this function.
-    //************************************
-    Type * GetPtr() const
-    {
-        return m_pRef;
-    };
-
-    //************************************
-    // FullName:    KRef_Ptr<Type>::GetCount
-    // Description: Returns number of reference that currently exist
-    //              for this pointer or 0 if no reference is held.
-    //************************************
-    RefCounter GetCount() const
-    {
-        if( m_piCount )return *m_piCount;
-    };
-
-    //************************************
-    // FullName:    KRef_Ptr<Type>::operator=
-    // Description: Assignment of an other KRef_Ptr.
-    // Parameter:   const KRef_Ptr<Type> & p
-    //************************************
-    KRef_Ptr<Type> & operator=( const KRef_Ptr<Type> & p )
-    {
-        if( m_pRef == p.m_pRef )return *this;
-        unRef();
-        m_pRef = p.m_pRef;
-        m_piCount = p.m_piCount;
-        ref();
-        return *this;
-    };
-
-    //************************************
-    // FullName:    KRef_Ptr<Other>::operator=
-    // Description: Assignment of an other KRef_Ptr of a different type.
-    // Parameter:   const KRef_Ptr<Other> & p
-    //************************************
-    template<class Other>
-    KRef_Ptr<Type> & operator=( const KRef_Ptr<Other> & p )
-    {
-        unRef();
-        m_pRef = p.m_pRef;
-        m_piCount = p.m_piCount;
-        ref();
-        return *this;
-    };
-
-    //************************************
-    // FullName:    KRef_Ptr<Type>::operator=
-    // Description: Assignment of a new reference.
-    // Parameter:   Type * p
-    //************************************
-    KRef_Ptr<Type> & operator=( Type * p )
-    {
-        if( m_pRef == p )return *this;
-        unRef();
-        m_pRef = p;
-        m_piCount = new RefCounter;
-        *m_piCount = 0;
-        ref();
-        return *this;
-    };
-
-    //************************************
-    // FullName:    KRef_Ptr<Other>::operator=
-    // Description: Assignment of a new reference of a different type.
-    // Parameter:   Other * p
-    //************************************
-    template<class Other>
-    KRef_Ptr<Type> & operator=( Other * p )
-    {
-        unRef();
-        m_pRef = p;
-        m_piCount = new RefCounter;
-        *m_piCount = 0;
-        ref();
-        return *this;
-    };
-
-    //************************************
-    // FullName:    KRef_Ptr<Type>::operator==
-    // Description: Comparison equals. Checks if both references are the same.
-    // Parameter:   const KRef_Ptr<Type> & p
-    //************************************
-    KBOOL operator==( const KRef_Ptr<Type> & p )const
-    {
-        return m_pRef == p.m_pRef;
-    };
-
-    //************************************
-    // FullName:    KRef_Ptr<Other>::operator==
-    // Description: Comparison equals. Checks if both references are the same of a
-    //              different type.
-    //              E.G An upast/downcast of the current type.
-    // Parameter:   const KRef_Ptr<Other> & p
-    //************************************
-    template<class Other>
-    KBOOL operator==( const KRef_Ptr<Other> & p )const
-    {
-        return m_pRef == p.m_pRef;
-    };
-
-    //************************************
-    // FullName:    KRef_Ptr<Type>::operator*
-    // Description: When referencing the KRef_Ptr return our referenced object.
-    //************************************
-    Type & operator*() const
-    {
-        return *m_pRef;
-    };
-
-    //************************************
-    // FullName:    KRef_Ptr<Type>::operator Type *
-    // Description: Implicit conversion support.
-    //************************************
-    operator Type *()
-    {
-        return m_pRef;
-    }
-
-    //************************************
-    // FullName:    KRef_Ptr<Type>::operator->
-    // Description: Returns the referenced pointer.
-    //************************************
-    Type * operator->() const
-    {
-        return m_pRef;
-    };
-
-    //************************************
-    // FullName:    KRef_Ptr<Type>::operator!=
-    // Description: Comparison does not equals. Compares the referenced pointer to an unsafe pointer.
-    // Parameter:   const Type * p
-    //************************************
-    KBOOL operator!= ( const Type * p ) const
-    {
-        return m_pRef != p;
-    };
-
-    //************************************
-    // FullName:    KRef_Ptr<Other>::operator!=
-    // Description: Comparison does not equals. Compares the referenced pointer to an unsafe pointer of a different type.
-    //              E.G a derrived type.
-    // Parameter:   const Other * p
-    //************************************
-    template<class Other>
-    KBOOL operator!= ( const Other * p ) const
-    {
-        return m_pRef != p;
-    };
-
-    //************************************
-    // FullName:    KRef_Ptr<Type>::operator!=
-    // Description: Comparison does not equals. Compares the referenced pointer to an other KRef_Ptr.
-    // Parameter:   const KRef_Ptr<Type> & p
-    //************************************
-    KBOOL operator!= ( const KRef_Ptr<Type> & p ) const
-    {
-        return m_pRef != p.m_pRef;
-    };
-
-    //************************************
-    // FullName:    KRef_Ptr<Other>::operator!=
-    // Description: Comparison does not equals. Compares the referenced pointer to an other KRef_Ptr of a different type.
-    // Parameter:   const KRef_Ptr<Other> & p
-    //************************************
-    template<class Other>
-    KBOOL operator!= ( const KRef_Ptr<Other> & p ) const
-    {
-        return m_pRef != p.m_pRef;
-    };
-
-    //************************************
-    // FullName:    KRef_Ptr<Type>::operator bool() const
-    // Description: This conversion operator allows KRef_Ptr objects to be used in boolean contexts, like if(p && p->valid()) {}.
-    //************************************
-    typedef Type * ThisType::*UnspecifiedBoolType;
-
-    operator UnspecifiedBoolType() const // never throws
-    {
-        return m_pRef == 0? 0: &ThisType::m_pRef;
-    }
-
-    // operator! is redundant, but some compilers need it
-    KBOOL operator! () const // never throws
-    {
-        return m_pRef == 0;
-    }
-};
-
-
-} // END namespace UTILS
-} // END namespace KDIS
+    } // END namespace UTILS
+    } // END namespace KDIS
+#endif // KDIS_CPP11

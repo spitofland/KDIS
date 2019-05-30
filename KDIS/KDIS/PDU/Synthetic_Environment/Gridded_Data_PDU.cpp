@@ -464,12 +464,12 @@ void Gridded_Data_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= true*
         if( AxisType == 0 )
         {
             // Regular grid
-            m_vpGridAxisDesc.push_back( new GridAxisRegular( InitialXi, FinalXi, PointsXi, InterleafFactor, AxisType, stream ) );
+            m_vpGridAxisDesc.push_back( KDIS_MAKE_REF( GridAxisRegular, InitialXi, FinalXi, PointsXi, InterleafFactor, AxisType, stream ) );
         }
         else
         {
             // Irregular grid.
-            m_vpGridAxisDesc.push_back( new GridAxisIrregular( InitialXi, FinalXi, PointsXi, InterleafFactor, AxisType, stream ) );
+            m_vpGridAxisDesc.push_back( KDIS_MAKE_REF( GridAxisIrregular, InitialXi, FinalXi, PointsXi, InterleafFactor, AxisType, stream ) );
         }
     }
 
@@ -486,13 +486,14 @@ void Gridded_Data_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= true*
         switch( DtRep )
         {
         case 0:
-            m_vGridData.push_back( new GridDataType0( SmpTyp, DtRep, stream ) );
+            m_vGridData.push_back( KDIS_MAKE_REF( GridDataType0, SmpTyp, DtRep, stream ) );
         case 1 :
-            m_vGridData.push_back( new GridDataType1( SmpTyp, DtRep, stream ) );
+            m_vGridData.push_back( KDIS_MAKE_REF( GridDataType1, SmpTyp, DtRep, stream ) );
         case 2:
-            m_vGridData.push_back( new GridDataType2( SmpTyp, DtRep, stream ) );
+            m_vGridData.push_back( KDIS_MAKE_REF( GridDataType2, SmpTyp, DtRep, stream ) );
         default:
             throw KException( __FUNCTION__, UNSUPPORTED_DATATYPE, "Unknown Grid Data Representation" );
+
         }
     }
 }

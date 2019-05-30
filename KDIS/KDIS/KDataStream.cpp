@@ -39,7 +39,7 @@ using namespace std;
 
 KDataStream::KDataStream( Endian Network_Endian /*= Big_Endian*/ ) :
     m_NetEndian( Network_Endian ),
-    m_ui16CurrentWritePos( 0 )
+    m_ui16CurrentReadPos( 0 )
 {
     if( IsMachineBigEndian() == true )
     {
@@ -53,12 +53,12 @@ KDataStream::KDataStream( Endian Network_Endian /*= Big_Endian*/ ) :
 
 //////////////////////////////////////////////////////////////////////////
 
-KDataStream::KDataStream( KOCTET * SerialData, KUINT16 DataSize, Endian Network_Endian /*= Big_Endian */ ) :
+KDataStream::KDataStream( KOCTET * SerialData, KSIZE_T DataSize, Endian Network_Endian /*= Big_Endian */ ) :
     m_NetEndian( Network_Endian ),
-    m_ui16CurrentWritePos( 0 )
+    m_ui16CurrentReadPos( 0 )
 {
     // Copy Data into vector
-    for( KUINT16 i = 0; i < DataSize; ++i )
+    for( KSIZE_T i = 0; i < DataSize; ++i )
     {
         m_vBuffer.push_back( SerialData[i] );
     }
@@ -95,16 +95,16 @@ Endian KDataStream::GetNetWorkEndian() const
 
 //////////////////////////////////////////////////////////////////////////
 
-KUINT16 KDataStream::GetBufferSize() const
-{
-    return ( m_vBuffer.size() - m_ui16CurrentWritePos );
+KSIZE_T KDataStream::GetBufferSize() const
+{ 
+    return ( m_vBuffer.size() - m_ui16CurrentReadPos );
 }
 
 //////////////////////////////////////////////////////////////////////////
 
-KUINT16 KDataStream::CopyIntoBuffer( KOCTET * Buffer, KUINT16 BufferSize,  KUINT16 WritePos /*= 0*/ ) const throw( KException )
+KSIZE_T KDataStream::CopyIntoBuffer( KOCTET * Buffer, KSIZE_T BufferSize,  KSIZE_T WritePos /*= 0*/ ) const throw( KException )
 {
-    if( ( BufferSize - WritePos ) < ( KUINT16 )m_vBuffer.size() )
+    if( ( BufferSize - WritePos ) < ( KSIZE_T )m_vBuffer.size() )
     {
         throw KException( BUFFER_TOO_SMALL );
     }
@@ -112,7 +112,7 @@ KUINT16 KDataStream::CopyIntoBuffer( KOCTET * Buffer, KUINT16 BufferSize,  KUINT
     vector<KUOCTET>::const_iterator citr = m_vBuffer.begin();
     vector<KUOCTET>::const_iterator citrEnd = m_vBuffer.end();
 
-    KUINT16 CurrentWritePos = WritePos;
+    KSIZE_T CurrentWritePos = WritePos;
 
     for( ; citr != citrEnd; ++citr, ++CurrentWritePos )
     {
@@ -124,10 +124,10 @@ KUINT16 KDataStream::CopyIntoBuffer( KOCTET * Buffer, KUINT16 BufferSize,  KUINT
 
 //////////////////////////////////////////////////////////////////////////
 
-void KDataStream::CopyFromBuffer( const KOCTET * SerialData, KUINT16 DataSize, Endian NetworkEndian /*= Big_Endian*/ )
+void KDataStream::CopyFromBuffer( const KOCTET * SerialData, KSIZE_T DataSize, Endian NetworkEndian /*= Big_Endian*/ )
 {
     // Copy Data into vector
-    for( KUINT16 i = 0; i < DataSize; ++i )
+    for( KSIZE_T i = 0; i < DataSize; ++i )
     {
         m_vBuffer.push_back( SerialData[i] );
     }
@@ -140,6 +140,14 @@ const KOCTET * KDataStream::GetBufferPtr() const
     return ( const KOCTET* )&m_vBuffer[0];
 }
 
+
+//////////////////////////////////////////////////////////////////////////
+
+const KOCTET * KDataStream::GetReadBufferPtr() const
+{
+    return ( const KOCTET* )&m_vBuffer[m_ui16CurrentReadPos];
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 const vector<KUOCTET> & KDataStream::GetBuffer() const
@@ -149,23 +157,23 @@ const vector<KUOCTET> & KDataStream::GetBuffer() const
 
 //////////////////////////////////////////////////////////////////////////
 
-void KDataStream::ResetWritePosition()
+void KDataStream::ResetReadPosition()
 {
-    m_ui16CurrentWritePos = 0;
+    m_ui16CurrentReadPos = 0;
 }
 
 //////////////////////////////////////////////////////////////////////////
 
-void KDataStream::SetCurrentWritePosition( KUINT16 WP )
+void KDataStream::SetCurrentReadPosition( KSIZE_T RP )
 {
-    m_ui16CurrentWritePos = WP;
+    m_ui16CurrentReadPos = RP;
 }
 
 //////////////////////////////////////////////////////////////////////////
 
-KUINT16 KDataStream::GetCurrentWritePosition() const
+KSIZE_T KDataStream::GetCurrentReadPosition() const
 {
-    return m_ui16CurrentWritePos;
+    return m_ui16CurrentReadPos;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -173,7 +181,7 @@ KUINT16 KDataStream::GetCurrentWritePosition() const
 void KDataStream::Clear()
 {
     m_vBuffer.clear();
-    m_ui16CurrentWritePos = 0;
+    m_ui16CurrentReadPos = 0;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -228,14 +236,14 @@ void KDataStream::Write( KOCTET V )
 
 void KDataStream::Read( KUOCTET & V )
 {
-    V = m_vBuffer[m_ui16CurrentWritePos++];
+    V = m_vBuffer[m_ui16CurrentReadPos++];
 }
 
 //////////////////////////////////////////////////////////////////////////
 
 void KDataStream::Read( KOCTET & V )
 {
-    V = m_vBuffer[m_ui16CurrentWritePos++];
+    V = m_vBuffer[m_ui16CurrentReadPos++];
 }
 
 //////////////////////////////////////////////////////////////////////////

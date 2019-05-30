@@ -85,6 +85,14 @@ Event_Report_R_PDU::~Event_Report_R_PDU()
 
 //////////////////////////////////////////////////////////////////////////
 
+void KDIS::PDU::Event_Report_R_PDU::Clear( )
+{
+    __super::Clear( );
+    m_ui16PDULength = EVENT_REPORT_R_PDU_SIZE;
+}
+
+//////////////////////////////////////////////////////////////////////////
+
 KString Event_Report_R_PDU::GetAsString() const
 {
     KStringStream ss;

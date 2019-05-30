@@ -150,7 +150,7 @@ int main()
         // 3
         // Now create a PDU that uses this data type and add it like normal.
         Comment_PDU ourPDU;
-        ourPDU.AddVariableDatum( pMyCustomDataClass );
+        ourPDU.AddVariableDatum( VarDtmPtr( pMyCustomDataClass ) );
 
         // 4
         // Encode the PDU.
@@ -177,7 +177,7 @@ int main()
             VarDtmPtr pVd = ourRecPDU->GetVariableDatum()[0];
 
             // Now upcast so we get our data type.
-            MyCustomClass * pMyClass = dynamic_cast<MyCustomClass*>( ( VariableDatum * )pVd );
+            MyCustomClass * pMyClass = dynamic_cast<MyCustomClass*>( pVd.get( ) );
 
             if( pMyClass )
             {

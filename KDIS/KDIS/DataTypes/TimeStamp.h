@@ -83,7 +83,7 @@ protected:
 
 public:
 
-    static const KUINT16 TIME_STAMP_SIZE = 4;
+    static const KUINT16  TIME_STAMP_SIZE = 4;
 
     TimeStamp();
 
@@ -114,6 +114,10 @@ public:
     //************************************
     void SetTime( KUINT32 T );
     KUINT32 GetTime() const;
+
+    // Time is in seconds, but only time modulo an hour is stored.
+    void SetTimeSec( KFLOAT64 T );
+    KFLOAT64 GetTimeSec( ) const;
 
     //************************************
     // FullName:    KDIS::DATA_TYPE::TimeStamp::SetTimeStampAutoCalculate

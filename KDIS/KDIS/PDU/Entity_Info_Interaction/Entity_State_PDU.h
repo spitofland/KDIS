@@ -287,6 +287,7 @@ public:
     // Parameter:   VarPrmPtr VP, vector<VarPrmPtr> & VP
     //************************************
     void AddVariableParameter( KDIS::DATA_TYPE::VarPrmPtr VP );
+    void RemoveVariableParameter( KDIS::DATA_TYPE::VarPrmPtr VP );
     void SetVariableParameters( const std::vector<KDIS::DATA_TYPE::VarPrmPtr> & VP );
     const std::vector<KDIS::DATA_TYPE::VarPrmPtr> & GetVariableParameters() const;
     void ClearVariableParameters();
@@ -312,6 +313,15 @@ public:
     //************************************
     virtual KDataStream Encode() const;
     virtual void Encode( KDataStream & stream ) const;
+
+    //************************************
+    // FullName:    KDIS::PDU::Entity_State_PDU::Clone
+    // Description: Copies all the fields from Other. If bShallowCopy is false, then it 
+    //              is equivalent to the = operator. If bShallowCopy is true then it copies 
+    //              all fields but does not delete the existing DR. 
+    // Parameter:   KDataStream & stream
+    //************************************
+    void Clone( const Entity_State_PDU & Other, KBOOL bShallowCopy = false );
 
     Entity_State_PDU & operator=( const Entity_State_PDU & Other );
 

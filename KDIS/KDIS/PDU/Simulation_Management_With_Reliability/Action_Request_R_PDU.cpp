@@ -84,6 +84,14 @@ Action_Request_R_PDU::~Action_Request_R_PDU()
 
 //////////////////////////////////////////////////////////////////////////
 
+void KDIS::PDU::Action_Request_R_PDU::Clear( )
+{
+    __super::Clear( );
+    m_ui16PDULength = ACTION_REQUEST_R_PDU_SIZE;
+}
+
+//////////////////////////////////////////////////////////////////////////
+
 KString Action_Request_R_PDU::GetAsString() const
 {
     KStringStream ss;
@@ -136,12 +144,12 @@ void Action_Request_R_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= t
     for( KUINT16 i = 0; i < m_ui32NumFixedDatum; ++i )
     {
         // Save the current write position so we can peek.
-        KUINT16 pos = stream.GetCurrentWritePosition();
+		KSIZE_T pos = stream.GetCurrentReadPosition();
         KUINT32 datumID;
 
         // Extract the datum id then reset the stream.
         stream >> datumID;
-        stream.SetCurrentWritePosition( pos );
+        stream.SetCurrentReadPosition( pos );
 
         // Use the factory decoder.
         FixedDatum * p = FixedDatum::FactoryDecode( datumID, stream );
@@ -154,7 +162,7 @@ void Action_Request_R_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= t
         else
         {
             // Default
-            m_vFixedDatum.push_back( FixDtmPtr( new FixedDatum( stream ) ) );
+            m_vFixedDatum.push_back( KDIS_MAKE_REF( FixedDatum, stream ) );
         }
     }
 
@@ -162,12 +170,12 @@ void Action_Request_R_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= t
     for( KUINT16 i = 0; i < m_ui32NumVariableDatum; ++i )
     {
         // Save the current write position so we can peek.
-        KUINT16 pos = stream.GetCurrentWritePosition();
+		KSIZE_T pos = stream.GetCurrentReadPosition();
         KUINT32 datumID;
 
         // Extract the datum id then reset the stream.
         stream >> datumID;
-        stream.SetCurrentWritePosition( pos );
+        stream.SetCurrentReadPosition( pos );
 
         // Use the factory decoder.
         VariableDatum * p = VariableDatum::FactoryDecode( datumID, stream );
@@ -180,7 +188,7 @@ void Action_Request_R_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= t
         else
         {
             // Default
-            m_vVariableDatum.push_back( VarDtmPtr( new VariableDatum( stream ) ) );
+            m_vVariableDatum.push_back( KDIS_MAKE_REF( VariableDatum, stream ) );
         }
     }
 }

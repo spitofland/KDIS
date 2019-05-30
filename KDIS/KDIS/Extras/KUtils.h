@@ -41,6 +41,8 @@ http://p.sf.net/kdis/UserGuide
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <iomanip>
+#include <ctype.h>
 
 #pragma once
 
@@ -103,6 +105,67 @@ static inline KBOOL IsMachineBigEndian()
         return true;
     }
 };
+
+
+/************************************************************************/
+/* Dumps the character set as hex format                                */
+/************************************************************************/
+static inline KString HexDump( const KOCTET* pcBuff, size_t uSize )
+{
+    KStringStream ss;
+    ss << std::hex << std::setfill('0');
+
+    size_t k = 0;
+    for( size_t i = 0; i < uSize; ++i )
+    {
+        ss << std::setw(2) << static_cast<unsigned>( pcBuff[i] ) << " ";
+        if( ++k == 16 )
+        {
+            ss << std::endl;
+            k = 0;
+        }
+        else if( k == 8 )
+        {
+            ss << "\t";
+        }
+    }
+
+    return ss.str();
+}
+
+/************************************************************************/
+/* Dumps the character set as printable ascii format                    */
+/************************************************************************/
+static inline KString AsciiDump( const KOCTET* pcBuff, size_t uSize )
+{
+    KStringStream ss;
+
+    size_t k = 0;
+    for( size_t i = 0; i < uSize; ++i )
+    {
+        if( isprint( pcBuff[i] ) )
+        {
+            ss << pcBuff[i];
+        }
+        else
+        {
+            ss << ".";
+        }
+
+        if( ++k == 16 )
+        {
+            ss << std::endl;
+            k = 0;
+        }
+        else if( k == 8 )
+        {
+            ss << "\t";
+        }
+    }
+
+    return ss.str();
+}
+
 
 } // END namespace UTILS
 } // END namespace KDIS

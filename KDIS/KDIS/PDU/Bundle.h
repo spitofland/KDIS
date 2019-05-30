@@ -64,7 +64,12 @@ namespace PDU {
 // By default we use a ref counted pointer, however if you want to use a standard
 // pointer or one of your own then simply change it below.
 /************************************************************************/
-typedef KDIS::UTILS::KRef_Ptr<Header> PduPtr; // Ref counter
+#ifdef KDIS_CPP11
+    typedef std::shared_ptr<Header> PduPtr; // Ref counter
+#else
+    typedef KDIS::UTILS::KRef_Ptr<Header> PduPtr; // Ref counter
+#endif
+
 //typedef Header * PduPtr; // Weak ref
 
 class KDIS_EXPORT Bundle

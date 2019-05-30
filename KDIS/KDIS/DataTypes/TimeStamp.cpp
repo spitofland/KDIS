@@ -39,6 +39,9 @@ using namespace KDIS;
 using namespace DATA_TYPE;
 using namespace ENUMS;
 
+
+static const KFLOAT64 TIME_PRECISION_MASK = pow(2,31)/3600.0;
+
 //////////////////////////////////////////////////////////////////////////
 // public:
 //////////////////////////////////////////////////////////////////////////
@@ -100,6 +103,18 @@ KUINT32 TimeStamp::GetTime() const
 }
 
 //////////////////////////////////////////////////////////////////////////
+void KDIS::DATA_TYPE::TimeStamp::SetTimeSec( KFLOAT64 T )
+{
+    m_TimeStampUnion.m_ui32Time = KUINT32( T * TIME_PRECISION_MASK );
+}
+
+//////////////////////////////////////////////////////////////////////////
+KDIS::KFLOAT64 KDIS::DATA_TYPE::TimeStamp::GetTimeSec( ) const
+{
+    return KFLOAT64( m_TimeStampUnion.m_ui32Time ) / TIME_PRECISION_MASK; 
+}
+
+//////////////////////////////////////////////////////////////////////////
 
 void TimeStamp::SetTimeStampAutoCalculate( KBOOL A )
 {
@@ -125,7 +140,7 @@ void TimeStamp::CalculateTimeStamp()
     SYSTEMTIME now;
     GetSystemTime( &now );
     KFLOAT64 f = ( now.wMinute * 60 ) + now.wSecond + ( now.wMilliseconds / 1000.0 );
-    iTs = f / 0.00000167638;
+    iTs = f * TIME_PRECISION_MASK;
 
 #else
 
@@ -133,7 +148,7 @@ void TimeStamp::CalculateTimeStamp()
     time( &aclock );
     struct tm * newtime = localtime( &aclock );
     iTs = newtime->tm_sec + ( newtime->tm_min * 60 );
-    iTs = iTs / 0.00000167638;
+    iTs = KUINT32( KFLOAT64( iTs ) * TIME_PRECISION_MASK );
 
 #endif
 
@@ -220,6 +235,7 @@ KBOOL TimeStamp::operator < ( const TimeStamp & Value ) const
     // Note: We don't check if the time stamps are the same type.
     return m_TimeStampUnion.m_ui32Time < Value.m_TimeStampUnion.m_ui32Time;
 }
+
 
 //////////////////////////////////////////////////////////////////////////
 

@@ -337,7 +337,7 @@ void Entity_State_PDU::InitDeadReckoning()
 void Entity_State_PDU::ApplyDeadReckoning( KFLOAT64 totalTimeSinceDrReset ) throw( KException )
 {
     if( !m_pDrCalc )throw KException( __FUNCTION__, INVALID_OPERATION, "You must call InitDeadReckoning() first." );
-    m_pDrCalc->RunAlgorithm( totalTimeSinceDrReset, m_EntityLocation, m_EntityOrientation );
+    m_pDrCalc->RunAlgorithm( totalTimeSinceDrReset, m_EntityLocation, m_EntityLinearVelocity, m_EntityOrientation );
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -414,6 +414,23 @@ void Entity_State_PDU::AddVariableParameter( VarPrmPtr VP )
     m_vVariableParameters.push_back( VP );
     ++m_ui8NumOfVariableParams;
     m_ui16PDULength += VariableParameter::VARIABLE_PARAMETER_SIZE;
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+void Entity_State_PDU::RemoveVariableParameter( VarPrmPtr VP )
+{
+    vector<VarPrmPtr>::iterator it = m_vVariableParameters.begin();
+    for( ; it != m_vVariableParameters.end( ); ++it )
+    {
+        if( *it == VP )
+        {
+            m_vVariableParameters.erase( it );
+            --m_ui8NumOfVariableParams;
+            m_ui16PDULength -= VariableParameter::VARIABLE_PARAMETER_SIZE;
+            break;
+        }
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -500,12 +517,12 @@ void Entity_State_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= true*
     for( KUINT8 i = 0; i < m_ui8NumOfVariableParams; ++i )
     {
         // Save the current write position so we can peek.
-        KUINT16 pos = stream.GetCurrentWritePosition();
+		KSIZE_T pos = stream.GetCurrentReadPosition();
         KUINT8 paramTyp;
 
         // Extract the  type then reset the stream.
         stream >> paramTyp;
-        stream.SetCurrentWritePosition( pos );
+        stream.SetCurrentReadPosition( pos );
 
         // Use the factory decoder.
         VariableParameter * p = VariableParameter::FactoryDecode( paramTyp, stream );
@@ -521,15 +538,15 @@ void Entity_State_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= true*
             switch( paramTyp )
             {
                 case ArticulatedPartType:
-                    m_vVariableParameters.push_back( VarPrmPtr( new ArticulatedPart( stream ) ) );
+                    m_vVariableParameters.push_back( KDIS_MAKE_REF( ArticulatedPart,  stream ) );
                     break;
 
                 case AttachedPartType:
-                    m_vVariableParameters.push_back( VarPrmPtr( new AttachedPart( stream ) ) );
+                    m_vVariableParameters.push_back( KDIS_MAKE_REF( AttachedPart, stream ) );
                     break;
 
                 default:
-                    m_vVariableParameters.push_back( VarPrmPtr( new VariableParameter( stream ) ) );
+                    m_vVariableParameters.push_back( KDIS_MAKE_REF( VariableParameter,  stream ) );
                     break;
             }
         }
@@ -571,6 +588,33 @@ void Entity_State_PDU::Encode( KDataStream & stream ) const
     for( ; citr != citrEnd; ++ citr )
     {
         ( *citr )->Encode( stream );
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+void KDIS::PDU::Entity_State_PDU::Clone( const Entity_State_PDU & Other, KBOOL bShallowCopy /*= false */ )
+{
+    Header::operator=( Other );
+    m_EntityID = Other.m_EntityID;
+    m_ui8ForceID = Other.m_ui8ForceID;
+    m_ui8NumOfVariableParams = Other.m_ui8NumOfVariableParams;
+    m_EntityType = Other.m_EntityType;
+    m_AltEntityType = Other.m_AltEntityType;
+    m_EntityLinearVelocity = Other.m_EntityLinearVelocity;
+    m_EntityLocation = Other.m_EntityLocation;
+    m_EntityOrientation = Other.m_EntityOrientation;
+    m_EntityAppearance = Other.m_EntityAppearance;
+    m_DeadReckoningParameter = Other.m_DeadReckoningParameter;
+    m_EntityMarking = Other.m_EntityMarking;
+    m_EntityCapabilities = Other.m_EntityCapabilities;
+    m_vVariableParameters = Other.m_vVariableParameters;
+
+    if( ! bShallowCopy )
+    {
+        if (m_pDrCalc && m_pDrCalc != Other.m_pDrCalc)
+            delete m_pDrCalc;
+        m_pDrCalc = ( Other.m_pDrCalc ? new DeadReckoningCalculator( *Other.m_pDrCalc ) : NULL );
     }
 }
 
@@ -626,5 +670,6 @@ KBOOL Entity_State_PDU::operator != ( const Entity_State_PDU & Value ) const
 {
     return !( *this == Value );
 }
+
 
 //////////////////////////////////////////////////////////////////////////
