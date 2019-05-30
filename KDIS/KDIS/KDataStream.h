@@ -54,14 +54,14 @@ private:
     Endian m_NetEndian;
 
     std::vector<KUOCTET> m_vBuffer;
-    KUINT16 m_ui16CurrentWritePos;
+	KSIZE_T m_ui16CurrentReadPos;
 
 public:
 
     // All DIS data is sent in Big Endian format
     KDataStream( Endian NetworkEndian = Big_Endian );
 
-    KDataStream( KOCTET * SerialData, KUINT16 DataSize, Endian NetworkEndian = Big_Endian );
+    KDataStream( KOCTET * SerialData, KSIZE_T DataSize, Endian NetworkEndian = Big_Endian );
 
     ~KDataStream();
 
@@ -82,7 +82,7 @@ public:
     // FullName:    KDIS::KDataStream::GetBufferSize
     // Description: Returns current buffer size in Octets/Bytes
     //************************************
-    KUINT16 GetBufferSize() const;
+	KSIZE_T GetBufferSize() const;
 
     //************************************
     // FullName:    KDIS::KDataStream::CopyIntoBuffer
@@ -90,19 +90,19 @@ public:
     //              Returns total bytes copied into buffer.
     //              Throws exception if the buffer is too small.
     // Parameter:   KOCTET * Buffer
-    // Parameter:   KUINT16 BufferSize
-    // Parameter:   KUINT16 WritePos - Where to start writing into the buffer
+    // Parameter:   KSIZE_T BufferSize
+    // Parameter:   KSIZE_T WritePos - Where to start writing into the buffer
     //************************************
-    KUINT16 CopyIntoBuffer( KOCTET * Buffer, KUINT16 BufferSize, KUINT16 WritePos = 0 ) const throw( KException );
+	KSIZE_T CopyIntoBuffer( KOCTET * Buffer, KSIZE_T BufferSize, KSIZE_T WritePos = 0 ) const throw( KException );
 
     //************************************
     // FullName:    KDIS::KDataStream::CopyFromBuffer
     // Description: Copy data from a buffer/array into the data stream
     // Parameter:   KOCTET * SerialData
-    // Parameter:   KUINT16 DataSize
+    // Parameter:   KSIZE_T DataSize
     // Parameter:   Endian NetworkEndian = Big_Endian
     //************************************
-    void CopyFromBuffer( const KOCTET * SerialData, KUINT16 DataSize, Endian NetworkEndian = Big_Endian );
+    void CopyFromBuffer( const KOCTET * SerialData, KSIZE_T DataSize, Endian NetworkEndian = Big_Endian );
 
     //************************************
     // FullName:    KDIS::KDataStream::GetBufferPtr
@@ -112,6 +112,12 @@ public:
     const KOCTET * GetBufferPtr() const;
 
     //************************************
+    // FullName:    KDIS::KDataStream::GetReadBufferPtr
+    // Description: Returns a pointer to the read buffer.
+    //************************************
+    const KOCTET * GetReadBufferPtr() const;
+
+    //************************************
     // FullName:    KDIS::KDataStream::GetBuffer
     // Description: Returns a constant reference to the internal buffer.
     //              Useful if you need lower-level access to the data.
@@ -119,23 +125,23 @@ public:
     const std::vector<KUOCTET> & GetBuffer() const;
 
     //************************************
-    // FullName:    KDIS::KDataStream::ResetWritePosition
-    // Description: Moves the write position back to the start of the buffer.
+    // FullName:    KDIS::KDataStream::ResetReadPosition
+    // Description: Moves the read position back to the start of the buffer.
     //************************************
-    void ResetWritePosition();
+    void ResetReadPosition();
 
     //************************************
     // FullName:    KDIS::KDataStream::SetCurrentWritePosition
     //              KDIS::KDataStream::GetCurrentWritePosition
-    // Description: The write position is the current position in the buffer that we are reading data from.
+    // Description: The read position is the current position in the buffer that we are reading data from.
     //              Using these 2 functions it is possible to "peak" at data and then restore the buffers
-    //              write position. For example if we wanted to read the next 4 bytes to determine what the
-    //              next data type is we could peak and then reset the write position back by 4 so that the
+    //              read position. For example if we wanted to read the next 4 bytes to determine what the
+    //              next data type is we could peak and then reset the read position back by 4 so that the
     //              data can be re-read by the data types decode function.
-    // Parameter:   KUINT16 WP
+    // Parameter:   KSIZE_T WP
     //************************************
-    void SetCurrentWritePosition( KUINT16 WP );
-    KUINT16 GetCurrentWritePosition() const;
+    void SetCurrentReadPosition(KSIZE_T RP );
+	KSIZE_T GetCurrentReadPosition() const;
 
     //************************************
     // FullName:    KDIS::KDataStream::Clear
@@ -219,9 +225,9 @@ void KDataStream::Read( Type & T )
     NetToDataType<Type> OctArray( T, false );
 
     // Copy octets into data type
-    for( KUINT8 i = 0; i < sizeof T; ++i, ++m_ui16CurrentWritePos )
+    for( KUINT8 i = 0; i < sizeof T; ++i, ++m_ui16CurrentReadPos )
     {
-        OctArray.m_Octs[i] = m_vBuffer[m_ui16CurrentWritePos];
+        OctArray.m_Octs[i] = m_vBuffer[m_ui16CurrentReadPos];
     }
 
     if( m_MachineEndian != m_NetEndian )
