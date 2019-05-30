@@ -179,7 +179,7 @@ KUINT32 GetEnumSizePDUType();
 // If KDIS_USE_ENUM_DESCRIPTORS is not set then NULL will be returned.
 const EnumDescriptor * GetEnumDescriptorPDUType( KUINT32 Index );
 
-KString GetEnumAsStringPDUType( KINT32 Value );
+KDIS_EXPORT KString GetEnumAsStringPDUType( KINT32 Value );
 
 // Returns true if a value was found.
 KBOOL GetEnumFromStringPDUType( const KString & Value, KINT32 & ValueOut );

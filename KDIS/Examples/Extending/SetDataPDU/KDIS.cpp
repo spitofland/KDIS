@@ -162,7 +162,7 @@ int main()
 		// 3
 		// Now create a PDU that uses this data type and add it like normal.
 		Set_Data_PDU ourPDU;
-		ourPDU.AddVariableDatum( pTargetPos );
+		ourPDU.AddVariableDatum( VarDtmPtr( pTargetPos ) );
 
 		// 4 
 		// Encode the PDU.		
@@ -189,7 +189,7 @@ int main()
 			VarDtmPtr pVd = ourRecPDU->GetVariableDatum()[0];
 
 			// Now up cast so we get our data type.
-			TargetPosition * pMyRecvTargetPos = dynamic_cast<TargetPosition*>( ( VariableDatum * )pVd );
+			TargetPosition * pMyRecvTargetPos = dynamic_cast<TargetPosition*>( pVd.get( ) );
 			
 			if( pMyRecvTargetPos )
 			{

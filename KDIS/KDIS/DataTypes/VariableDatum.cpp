@@ -102,9 +102,17 @@ KUINT32 VariableDatum::GetDatumLength() const
 
 //////////////////////////////////////////////////////////////////////////
 
+KUINT32 VariableDatum::GetDatumLengthInOctets() const
+{
+    return static_cast<KUINT32>( ceil( m_ui32DatumLength / 8.0 ) );
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+
 KUINT32 VariableDatum::GetPDULength() const
 {
-    return VARIABLE_DATUM_SIZE + ( m_v8DatumValue.size() * 8 );
+    return VARIABLE_DATUM_SIZE + m_v8DatumValue.size();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -118,18 +126,21 @@ void VariableDatum::SetDatumValue( const KString & s )
 
 void VariableDatum::SetDatumValue( const KOCTET * data, KUINT32 sizeInBits )
 {
-    m_v8DatumValue.clear();
+    KUINT32 sizeInOctets = (KUINT32)ceil( sizeInBits / 8.0 );
+    // Make sure it's padded to an 8-byte boundary. 
+	KUINT32 arraySize = (KUINT32)ceil(sizeInBits / 64.0) * 8;
 
-    KUINT32 sizeInOctets = ceil( sizeInBits / 8.0 );
-    for( KUINT16 i = 0; i < sizeInOctets; )
+    m_v8DatumValue.resize( arraySize );
+    
+    for( KUINT32 i = 0; i < sizeInOctets; ++i )
     {
-        DatumEntry de;
+        m_v8DatumValue[i] = data[i];
+    }
 
-        for( KUINT16 j = 0; j < 8 && i < sizeInOctets; ++j, ++i )
-        {
-            de.Buffer[j] = data[i];
-        }
-        m_v8DatumValue.push_back( de );
+    // Don't forget to clear the padding 
+    for( size_t i = sizeInOctets; i < m_v8DatumValue.size(); ++i )
+    {
+        m_v8DatumValue[i] = 0;
     }
 
     m_ui32DatumLength = sizeInBits;
@@ -137,50 +148,30 @@ void VariableDatum::SetDatumValue( const KOCTET * data, KUINT32 sizeInBits )
 
 //////////////////////////////////////////////////////////////////////////
 
-void VariableDatum::GetDatumValueCopyIntoBuffer( KOCTET * Buffer, KUINT16 BufferSize ) const throw( KException )
+KUINT32 VariableDatum::GetDatumValueCopyIntoBuffer( KOCTET * Buffer, KUINT16 BufferSize ) const throw( KException )
 {
-    KUINT32 sizeInOctets = ceil( m_ui32DatumLength / 8.0 );
+    KUINT32 sizeInOctets = GetDatumLengthInOctets( );
 
-    if( BufferSize < sizeInOctets )throw KException( __FUNCTION__, BUFFER_TOO_SMALL );
+    if( BufferSize < sizeInOctets ) throw KException( __FUNCTION__, BUFFER_TOO_SMALL );
 
-    // Copy the data into the buffer, octet by octet
-    vector<DatumEntry>::const_iterator citr = m_v8DatumValue.begin();
+    memcpy( Buffer, &m_v8DatumValue[0], sizeInOctets );
 
-    KUINT16 i = 0;
-
-    while( i < sizeInOctets )
-    {
-        for( KUINT16 j = 0; i < sizeInOctets && j < 8; ++j, ++i )
-        {
-            Buffer[i] = citr->Buffer[j];
-        }
-        ++citr;
-    }
+    return sizeInOctets;
 }
 
 //////////////////////////////////////////////////////////////////////////
 
 KString VariableDatum::GetDatumValueAsKString() const
 {
-    KStringStream ss;
+    KString str;
 
-    vector<DatumEntry>::const_iterator citr =  m_v8DatumValue.begin();
-    vector<DatumEntry>::const_iterator citrEnd = m_v8DatumValue.end();
-
-    KUINT32 i = 0;
-
-    KUINT32 ui32LengthInOctets = ceil(m_ui32DatumLength / 8.0);
-
-    while( citr != citrEnd )
+    KUINT32 ui32LengthInOctets = GetDatumLengthInOctets( );
+    if( ui32LengthInOctets > 0 )
     {
-        for( KUINT16 j = 0; i < ui32LengthInOctets && j < 8; ++j, ++i )
-        {
-            ss << citr->Buffer[j];
-        }
-        ++citr;
+        str.assign( m_v8DatumValue.begin(), m_v8DatumValue.end( ) );
     }
 
-    return ss.str();
+    return str;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -189,21 +180,14 @@ vector<KUINT64> VariableDatum::GetDatumValueAsKUINT64() const
 {
     KBOOL bSwapBytes = !IsMachineBigEndian();
 
-    vector<DatumEntry>::const_iterator citr = m_v8DatumValue.begin();
-    vector<DatumEntry>::const_iterator citrEnd = m_v8DatumValue.end();
+    KUINT32 ui32LengthInOctets = GetDatumLengthInOctets( );
 
     vector<KUINT64> m_Return;
+    m_Return.resize( ceil( ui32LengthInOctets / 8.0 ) );
 
-    KUINT32 ui32CurrentPos = 0;
-    KUINT32 ui32LengthInOctets = ceil(m_ui32DatumLength / 8.0);
-
-    while( citr != citrEnd )
+    for( size_t i = 0, j = 0; i < ui32LengthInOctets; i += 8, ++j )
     {
-        if( ( ui32LengthInOctets - ui32CurrentPos ) < 8 )break;
-
-        m_Return.push_back( NetToKUINT64( citr->Buffer, bSwapBytes ).m_Value );
-
-        ui32CurrentPos += 8;
+        m_Return[j] = NetToKUINT64( &m_v8DatumValue[i], bSwapBytes ).m_Value;
     }
 
     return m_Return;
@@ -215,23 +199,15 @@ vector<KFLOAT64> VariableDatum::GetDatumValueAsKFLOAT64() const
 {
     KBOOL bSwapBytes = !IsMachineBigEndian();
 
-    vector<DatumEntry>::const_iterator citr = m_v8DatumValue.begin();
-    vector<DatumEntry>::const_iterator citrEnd = m_v8DatumValue.end();
+    KUINT32 ui32LengthInOctets = GetDatumLengthInOctets( );
 
     vector<KFLOAT64> m_Return;
+    m_Return.resize( ceil( ui32LengthInOctets / 8.0 ) );
 
-    KUINT32 ui32CurrentPos = 0;
-    KUINT32 ui32LengthInOctets = ceil(m_ui32DatumLength / 8.0);
-
-    while( citr != citrEnd )
+    for( size_t i = 0, j = 0; i < ui32LengthInOctets; i += 8, ++j )
     {
-        if( ( ui32LengthInOctets - ui32CurrentPos ) < 8 )break;
-
-        m_Return.push_back( NetToKFLOAT64( citr->Buffer, bSwapBytes ).m_Value );
-
-        ui32CurrentPos += 8;
+        m_Return[j] = NetToKUINT64( &m_v8DatumValue[i], bSwapBytes ).m_Value;
     }
-
     return m_Return;
 }
 
@@ -253,7 +229,10 @@ KString VariableDatum::GetAsString() const
     ss << "Variable Datum:"
        << "\n\tID:          " << GetEnumAsStringDatumID( m_ui32DatumID )
        << "\n\tLength:      " << m_ui32DatumLength
-       << "\n\tValue(S):    " << GetDatumValueAsKString()
+       << "\n\tValue Hex: "
+       << "\n"              << HexDump( &m_v8DatumValue[0], m_v8DatumValue.size( ) )
+       << "\n\tValue Ascii: "
+       << "\n"              << AsciiDump( &m_v8DatumValue[0], m_v8DatumValue.size( ) )
        << "\n";
 
     return ss.str();
@@ -270,20 +249,18 @@ void VariableDatum::Decode( KDataStream & stream ) throw( KException )
     stream >> m_ui32DatumID
            >> m_ui32DatumLength;
 
-    KUINT32 ui32LengthInOctets = ceil(ceil(m_ui32DatumLength / 8.0) / 8.0) * 8;
-
-    // Datum length is returned in bits, so we need to convert to octets
-    for( KUINT16 i = 0; i < ui32LengthInOctets; )
+    if( m_ui32DatumLength > 0 )
     {
-        DatumEntry de;
+        // Datum length is returned in bits, so we need to convert to octets
+        KUINT32 sizeInOctets = (KUINT32)ceil( m_ui32DatumLength / 8.0 );
+        KUINT32 arraySize = (KUINT32)ceil(m_ui32DatumLength / 64.0) * 8;
 
-        for( KUINT16 j = 0; i < ui32LengthInOctets && j < 8; ++j, ++i )
+        m_v8DatumValue.resize( arraySize );
+
+        for( size_t i = 0; i < m_v8DatumValue.size( ); ++i )
         {
-            KOCTET o;
-            stream >> o;
-            de.Buffer[j] = o;
+            stream >> m_v8DatumValue[i];
         }
-        m_v8DatumValue.push_back( de );
     }
 }
 
@@ -305,17 +282,12 @@ void VariableDatum::Encode( KDataStream & stream ) const
     stream << m_ui32DatumID
            << m_ui32DatumLength;
 
-    vector<DatumEntry>::const_iterator citr = m_v8DatumValue.begin();
-    vector<DatumEntry>::const_iterator citrEnd = m_v8DatumValue.end();
-
-    while( citr != citrEnd )
+    if( m_ui32DatumLength > 0 )
     {
-        for( KUINT16 i = 0; i < 8; ++i )
+        for( size_t i = 0; i < m_v8DatumValue.size(); ++i )
         {
-            stream << citr->Buffer[i];
+            stream << m_v8DatumValue[i];
         }
-
-        ++citr;
     }
 }
 
@@ -326,16 +298,7 @@ KBOOL VariableDatum::operator == ( const VariableDatum & Value ) const
     if( m_ui32DatumID     != Value.m_ui32DatumID )     return false;
     if( m_ui32DatumLength != Value.m_ui32DatumLength ) return false;
 
-    vector<DatumEntry>::const_iterator citrThis =  m_v8DatumValue.begin(),
-                                       citrOther = Value.m_v8DatumValue.begin();
-
-    while( citrThis != m_v8DatumValue.end() && citrOther != Value.m_v8DatumValue.end() )
-    {
-        if( memcmp( citrThis->Buffer, citrOther->Buffer, 8 ) != 0 )return false;
-        ++citrThis;
-        ++citrOther;
-    }
-    return true;
+    return m_v8DatumValue == Value.m_v8DatumValue;
 }
 
 //////////////////////////////////////////////////////////////////////////

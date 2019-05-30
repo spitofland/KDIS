@@ -137,15 +137,6 @@ public:
     KDIS::DATA_TYPE::ENUMS::EntityTrailingEffect GetEntityTrailingEffect() const;
 
     //************************************
-    // FullName:    KDIS::DATA_TYPE::SensorEmitterAppearance::SetEntityHeadLights
-    //              KDIS::DATA_TYPE::SensorEmitterAppearance::IsEntityHeadLightsOn
-    // Description: Are the vehicles head lights turned on? True = On, False = Off.
-    // Parameter:   KBOOL HL
-    //************************************
-    void SetEntityHeadLights( KBOOL HL );
-    KBOOL IsEntityHeadLightsOn() const;
-
-    //************************************
     // FullName:    KDIS::DATA_TYPE::SensorEmitterAppearance::SeLights
     //              KDIS::DATA_TYPE::SensorEmitterAppearance::IsLightsOn
     // Description: Are the sensors lights turned on? True = On, False = Off.
@@ -239,15 +230,6 @@ public:
     //************************************
     void SetEntityBlackoutLights( KBOOL BL );
     KBOOL IsEntityBlackoutLightsOn() const;
-
-	//************************************
-    // FullName:    KDIS::DATA_TYPE::SensorEmitterAppearance::SetEntityBlackoutBrakeLights
-    //              KDIS::DATA_TYPE::SensorEmitterAppearance::IsEntityBlackoutBrakeLightsOn
-    // Description: Are the vehicles blackout brake lights turned on? True = On, False = Off.
-    // Parameter:   KBOOL BBL
-    //************************************
-    void SetEntityBlackoutBrakeLights( KBOOL BBL );
-    KBOOL IsEntityBlackoutBrakeLightsOn() const;
 
 	//************************************
     // FullName:    KDIS::DATA_TYPE::SensorEmitterAppearance::SetEntityInteriorLights

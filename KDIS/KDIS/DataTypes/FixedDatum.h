@@ -59,7 +59,11 @@ using KDIS::UTILS::IsMachineBigEndian;
 // pointer or one of your own then simply change it below.
 /************************************************************************/
 class FixedDatum;
+#ifdef KDIS_CPP11
+typedef std::shared_ptr<FixedDatum> FixDtmPtr; // Ref counter
+#else
 typedef KDIS::UTILS::KRef_Ptr<FixedDatum> FixDtmPtr; // Ref counter
+#endif
 //typedef FixedDatum* FixDtmPtr; // Weak ref
 
 class KDIS_EXPORT FixedDatum : public DataTypeBase, public FactoryDecoderUser<FixedDatum>

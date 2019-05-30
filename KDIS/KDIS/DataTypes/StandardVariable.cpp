@@ -97,13 +97,13 @@ StdVarPtr StandardVariable::FactoryDecodeStandardVariable(  KDataStream & stream
     if( stream.GetBufferSize() < STANDARD_VARIABLE_SIZE )throw KException( __FUNCTION__, NOT_ENOUGH_DATA_IN_BUFFER );
 
     // We want to peek at the next data and then roll back for a full decode.
-    KUINT16 savePos = stream.GetCurrentWritePosition();
+	KSIZE_T savePos = stream.GetCurrentReadPosition();
 
     // First decode the header so we can determine what type of record we are dealing with.
     StandardVariable recordHeader( stream );
 
     // Reset stream
-    stream.SetCurrentWritePosition( savePos );
+    stream.SetCurrentReadPosition( savePos );
 
 	// First check for a custom decoder.
 	StandardVariable * p = FactoryDecode( recordHeader.GetStandardVariableType(), stream );
@@ -116,8 +116,8 @@ StdVarPtr StandardVariable::FactoryDecodeStandardVariable(  KDataStream & stream
 	// Check for a KDIS implementation of the type.
     switch( recordHeader.GetStandardVariableType() )
     {
-		case IOCommunicationsNodeRecord   : return new IOCommunicationsNode( stream );
-		case IOEffectRecord               : return new IOEffect( stream );
+		case IOCommunicationsNodeRecord   : return KDIS_MAKE_REF( IOCommunicationsNode, stream );
+		case IOEffectRecord               : return KDIS_MAKE_REF( IOEffect, stream );
 
 		// TODO: DE Records
 		//case DEPrecisionAimpointRecord        : return new IOEffect( stream );

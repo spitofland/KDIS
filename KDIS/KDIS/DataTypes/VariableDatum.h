@@ -57,7 +57,11 @@ namespace DATA_TYPE {
 // pointer or one of your own then simply change it below.
 /************************************************************************/
 class VariableDatum;
+#ifdef KDIS_CPP11
+typedef std::shared_ptr<VariableDatum> VarDtmPtr; // Ref counter
+#else
 typedef KDIS::UTILS::KRef_Ptr<VariableDatum> VarDtmPtr; // Ref counter
+#endif
 //typedef VariableDatum* VarDtmPtr; // Weak ref
 
 class KDIS_EXPORT VariableDatum : public DataTypeBase, public FactoryDecoderUser<VariableDatum>
@@ -68,18 +72,8 @@ protected:
 
     KUINT32 m_ui32DatumLength;
 
-    struct DatumEntry
-    {
-        KOCTET Buffer[8];
-
-        DatumEntry()
-        {
-            memset( Buffer, 0x00, 8 );
-        };
-    };
-
     // Holds 64 bits, not all bits may belong to the value as padding is also added.
-    std::vector<DatumEntry> m_v8DatumValue;
+    std::vector<KOCTET> m_v8DatumValue;
 
 public:
 
@@ -113,6 +107,13 @@ public:
     virtual KUINT32 GetDatumLength() const;
 
     //************************************
+    // FullName:    KDIS::DATA_TYPE::VariableDatum::GetDatumLengthInOctets
+    // Description: Returns length of datum VALUE in octets.
+    //              Note: Does not include the datum id or length field.
+    //************************************
+    virtual KUINT32 GetDatumLengthInOctets() const;
+
+    //************************************
     // FullName:    KDIS::DATA_TYPE::VariableDatum::GetDatumLength
     // Description: Returns length of Datum in octets that it will
     //              occupy when put into a PDU.
@@ -133,12 +134,24 @@ public:
     // Parameter:   KOCTET * Buffer
     // Parameter:   KUINT16 BufferSize
     //************************************
-    virtual void GetDatumValueCopyIntoBuffer( KOCTET * Buffer, KUINT16 BufferSize ) const throw( KException );
+    virtual KUINT32 GetDatumValueCopyIntoBuffer( KOCTET * Buffer, KUINT16 BufferSize ) const throw( KException );
     virtual KString GetDatumValueAsKString() const;
+    virtual const KOCTET* GetDatumBuffer( ) const { return &m_v8DatumValue[0]; }
     virtual std::vector<KUINT64> GetDatumValueAsKUINT64() const;
     virtual std::vector<KFLOAT64> GetDatumValueAsKFLOAT64() const;
     virtual void SetDatumValue( const KString & s );
     virtual void ClearDatumValue();
+
+    //************************************
+    // FullName:    KDIS::DATA_TYPE::VariableDatum<Type>::SetDatumValue
+    //              KDIS::DATA_TYPE::VariableDatum<Type>::GetDatumValue
+    // Description: Returns datum value in required format.
+    // Parameter:   Type val
+    //************************************
+    template<class Type>
+    void SetDatumValue( Type val ) throw( KException );
+    template<class Type>
+    Type GetDatumValue() const throw( KException );
 
     //************************************
     // FullName:    KDIS::DATA_TYPE::VariableDatum::SetDatumValue
@@ -170,6 +183,53 @@ public:
     KBOOL operator == ( const VariableDatum & Value ) const;
     KBOOL operator != ( const VariableDatum & Value ) const;
 };
+//////////////////////////////////////////////////////////////////////////
+
+template<class Type>
+Type VariableDatum::GetDatumValue() const throw( KException )
+{
+    if( sizeof( Type ) < GetDatumLengthInOctets( )  ) throw KException( __FUNCTION__, DATA_TYPE_TOO_LARGE );
+
+    NetToDataType<Type> NetValue( &m_v8DatumValue[0], false );
+
+    // Do we need to convert the data back to machine endian?
+    if( IsMachineBigEndian() == false )
+    {
+        // Need to convert
+        NetValue.SwapBytes();
+    }
+
+    return NetValue.m_Value;
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+template<class Type>
+void VariableDatum::SetDatumValue( Type val ) throw( KException )
+{
+    // Datum length is returned in bits, so we need to convert to octets
+    KUINT32 sizeInOctets = ceil( m_ui32DatumLength / 8.0 );
+    KUINT32 arraySize = sizeInOctets + sizeInOctets % 8;
+
+    m_v8DatumValue.resize( arraySize );
+
+    // Now convert the data into big endian, we want to store the value like this
+    // as when we encode/decode we have no way to know what the data type is or how many
+    // octets long it is. We only convert to machine endian when the data is requested.
+    NetToDataType<Type> NetValue( val, !IsMachineBigEndian( ) );
+
+    // Copy into datum value.
+    for( size_t i = 0; i < sizeof( Type ); ++i )
+    {
+        m_cDatumValue[i] = NetValue.m_Octs[i];
+    }
+
+    // Don't forget to clear the padding.
+    for( size_t i = sizeof( Type ); i < arraySize; ++i )
+    {
+        m_cDatumValue[i] = 0;
+    }
+}
 
 } // END namespace DATA_TYPES
 } // END namespace KDIS

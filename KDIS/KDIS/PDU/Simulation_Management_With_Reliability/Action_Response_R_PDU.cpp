@@ -83,6 +83,14 @@ Action_Response_R_PDU::~Action_Response_R_PDU()
 
 //////////////////////////////////////////////////////////////////////////
 
+void KDIS::PDU::Action_Response_R_PDU::Clear( )
+{
+    __super::Clear( );
+    m_ui16PDULength = ACTION_RESPONSE_R_PDU_SIZE;
+}
+
+//////////////////////////////////////////////////////////////////////////
+
 KString Action_Response_R_PDU::GetAsString() const
 {
     KStringStream ss;

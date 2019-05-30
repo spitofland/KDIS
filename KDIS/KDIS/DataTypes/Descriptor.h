@@ -60,7 +60,11 @@ namespace DATA_TYPE {
 // pointer or one of your own then simply change it below.
 /************************************************************************/
 class Descriptor;
-typedef KDIS::UTILS::KRef_Ptr<Descriptor> DescPtr; // Ref counter
+#ifdef KDIS_CPP11
+    typedef std::shared_ptr<Descriptor> DescPtr; // Ref counter
+#else
+    typedef KDIS::UTILS::KRef_Ptr<Descriptor> DescPtr; // Ref counter
+#endif
 //typedef Descriptor* DescPtr; // Weak ref
 
 #if DIS_VERSION > 6 

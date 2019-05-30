@@ -57,8 +57,14 @@ namespace KDIS {
 namespace DATA_TYPE {
 
 // Some PDU specific data types.
-typedef KDIS::UTILS::KRef_Ptr<GridAxisRegular> GridAxisDescriptor;
-typedef KDIS::UTILS::KRef_Ptr<GridData> GridDataPtr;
+#ifdef KDIS_CPP11
+    typedef std::shared_ptr<GridAxisRegular> GridAxisDescriptor; // Ref counter
+    typedef std::shared_ptr<GridData> GridDataPtr; // Ref counter
+#else
+    typedef KDIS::UTILS::KRef_Ptr<GridAxisRegular> GridAxisDescriptor;
+    typedef KDIS::UTILS::KRef_Ptr<GridData> GridDataPtr;
+#endif
+
 
 } // END namespace DATA_TYPE
 

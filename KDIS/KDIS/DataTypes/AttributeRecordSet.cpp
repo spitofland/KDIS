@@ -177,12 +177,12 @@ void AttributeRecordSet::Decode( KDataStream & stream ) throw( KException )
     for( KUINT16 i = 0; i < m_ui16NumAttrRecs; ++i )
     {
         // Save the current write position so we can peek.
-        KUINT16 pos = stream.GetCurrentWritePosition();
+		KSIZE_T pos = stream.GetCurrentReadPosition();
         KUINT32 datumID;
 
         // Extract the datum id then reset the stream.
         stream >> datumID;
-        stream.SetCurrentWritePosition( pos );
+        stream.SetCurrentReadPosition( pos );
 
         // Use the factory decoder. 
         StandardVariable * p = StandardVariable::FactoryDecode( datumID, stream );
@@ -195,7 +195,7 @@ void AttributeRecordSet::Decode( KDataStream & stream ) throw( KException )
         else
         {
             // Default
-            m_vAttrRec.push_back( StdVarPtr( new StandardVariable( stream ) ) );
+            m_vAttrRec.push_back( KDIS_MAKE_REF( StandardVariable, stream ) );
         }
     }
 }

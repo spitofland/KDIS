@@ -63,6 +63,12 @@ public:
     virtual ~Action_Response_R_PDU();
 
     //************************************
+    // FullName:    KDIS::PDU::Action_Response_R_PDU::Clear
+    // Description: Clears both the fixed and variable datum records, and reset the PDU length
+    //************************************
+    virtual void Clear( ) override;
+
+    //************************************
     // FullName:    KDIS::PDU::Action_Response_R_PDU::GetAsString
     // Description: Returns a string representation of the PDU.
     //************************************

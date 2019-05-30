@@ -105,7 +105,12 @@ class FactoryDecoderUser
 {
 public:
 	
-	typedef KDIS::UTILS::KRef_Ptr< FactoryDecoder<DecoderBaseTyp> > FacDecPtr;
+#ifdef KDIS_CPP11
+    typedef std::shared_ptr<FactoryDecoder<DecoderBaseTyp>> FacDecPtr;
+#else
+    typedef KDIS::UTILS::KRef_Ptr< FactoryDecoder<DecoderBaseTyp> > FacDecPtr;
+#endif
+
 
 protected:
 
@@ -165,9 +170,16 @@ public:
 	}
 };
 
+#ifdef KDIS_CPP11
+// Init static map variable.
+template<class DecoderBaseTyp>
+std::map<KINT32, std::shared_ptr< FactoryDecoder<DecoderBaseTyp> > > FactoryDecoderUser<DecoderBaseTyp>::m_mDecoders = std::map<KINT32, std::shared_ptr< FactoryDecoder<DecoderBaseTyp> > >();
+#else
 // Init static map variable.
 template<class DecoderBaseTyp>
 std::map<KINT32, KDIS::UTILS::KRef_Ptr< FactoryDecoder<DecoderBaseTyp> > > FactoryDecoderUser<DecoderBaseTyp>::m_mDecoders = std::map<KINT32, KDIS::UTILS::KRef_Ptr< FactoryDecoder<DecoderBaseTyp> > >();
+#endif
+
 
 } // END namespace DATA_TYPES
 } // END namespace KDIS

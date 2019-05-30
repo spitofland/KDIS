@@ -465,12 +465,12 @@ void Directed_Energy_Fire_PDU::Decode( KDataStream & stream, bool ignoreHeader /
     for( KUINT16 i = 0; i < m_ui16NumDERecs; ++i )
     {
         // Save the current write position so we can peek.
-        KUINT16 pos = stream.GetCurrentWritePosition();
+		KSIZE_T pos = stream.GetCurrentReadPosition();
         KUINT32 datumID;
 
         // Extract the datum id then reset the stream.
         stream >> datumID;
-        stream.SetCurrentWritePosition( pos );
+        stream.SetCurrentReadPosition( pos );
 
         // Use the factory decoder.
         StandardVariable * p = StandardVariable::FactoryDecode( datumID, stream );
@@ -483,7 +483,7 @@ void Directed_Energy_Fire_PDU::Decode( KDataStream & stream, bool ignoreHeader /
         else
         {
             // Default
-            m_vDeRec.push_back( StdVarPtr( new StandardVariable( stream ) ) );
+            m_vDeRec.push_back( KDIS_MAKE_REF( StandardVariable, stream ) );
         }
     }
 }

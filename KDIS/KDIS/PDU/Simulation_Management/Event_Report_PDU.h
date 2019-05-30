@@ -87,6 +87,12 @@ public:
     virtual void SetVariableDatum(const std::vector<KDIS::DATA_TYPE::VarDtmPtr> & VD);
 
     //************************************
+    // FullName:    KDIS::PDU::Data_PDU::Clear
+    // Description: Clears both the fixed and variable datum records, and reset the PDU length
+    //************************************
+    virtual void Clear( ) override;
+
+    //************************************
     // FullName:    KDIS::PDU::Event_Report_PDU::GetAsString
     // Description: Returns a string representation of the PDU.
     //************************************

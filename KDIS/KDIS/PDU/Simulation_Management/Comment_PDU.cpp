@@ -93,7 +93,7 @@ Comment_PDU::~Comment_PDU()
 
 //////////////////////////////////////////////////////////////////////////
 
-KUINT32 Comment_PDU::GetNumberFIxedDatum() const
+KUINT32 Comment_PDU::GetNumberFixedDatum() const
 {
     return m_ui32NumFixedDatum;
 }
@@ -118,7 +118,7 @@ void Comment_PDU::AddFixedDatum( FixDtmPtr FD )
 
 //////////////////////////////////////////////////////////////////////////
 
-void Comment_PDU::SetFixedDatum( const vector<FixDtmPtr> & FD )
+void Comment_PDU::SetFixedDatum( const fixed_datum_ctor & FD )
 {
     // Subtract old length
     m_ui16PDULength -= m_ui32NumFixedDatum * FixedDatum::FIXED_DATUM_SIZE;
@@ -132,7 +132,7 @@ void Comment_PDU::SetFixedDatum( const vector<FixDtmPtr> & FD )
 
 //////////////////////////////////////////////////////////////////////////
 
-const vector<FixDtmPtr> & Comment_PDU::GetFixedDatum() const
+const Comment_PDU::fixed_datum_ctor & Comment_PDU::GetFixedDatum() const
 {
     return m_vFixedDatum;
 }
@@ -150,7 +150,7 @@ void Comment_PDU::AddVariableDatum( VarDtmPtr VD )
 
 //////////////////////////////////////////////////////////////////////////
 
-void Comment_PDU::SetVariableDatum( const vector<VarDtmPtr> & VD )
+void Comment_PDU::SetVariableDatum( const var_datum_ctor & VD )
 {
     m_vVariableDatum = VD;
     m_ui32NumVariableDatum = m_vVariableDatum.size();
@@ -159,8 +159,8 @@ void Comment_PDU::SetVariableDatum( const vector<VarDtmPtr> & VD )
     m_ui16PDULength = COMMENT_PDU_SIZE + ( m_ui32NumFixedDatum * FixedDatum::FIXED_DATUM_SIZE );
 
     // Calculate the new length
-    vector<VarDtmPtr>::const_iterator citr = m_vVariableDatum.begin();
-    vector<VarDtmPtr>::const_iterator citrEnd = m_vVariableDatum.end();
+    var_datum_ctor::const_iterator citr = m_vVariableDatum.begin();
+    var_datum_ctor::const_iterator citrEnd = m_vVariableDatum.end();
     for( ; citr != citrEnd; ++citr )
     {
         m_ui16PDULength += ( *citr )->GetPDULength();
@@ -169,9 +169,29 @@ void Comment_PDU::SetVariableDatum( const vector<VarDtmPtr> & VD )
 
 //////////////////////////////////////////////////////////////////////////
 
-const vector<VarDtmPtr> & Comment_PDU::GetVariableDatum() const
+const Comment_PDU::var_datum_ctor & Comment_PDU::GetVariableDatum() const
 {
     return m_vVariableDatum;
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+bool KDIS::PDU::Comment_PDU::IsEmpty( )
+{
+    return !( m_ui32NumFixedDatum + m_ui32NumVariableDatum );
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+void KDIS::PDU::Comment_PDU::Clear( )
+{
+    m_vFixedDatum.clear( );
+    m_ui32NumFixedDatum = 0;
+
+    m_vVariableDatum.clear( );
+    m_ui32NumVariableDatum = 0;
+
+    m_ui16PDULength = COMMENT_PDU_SIZE;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -188,16 +208,16 @@ KString Comment_PDU::GetAsString() const
        << "\n";
 
     ss << "Fixed Datum\n";
-    vector<FixDtmPtr>::const_iterator citrFixed = m_vFixedDatum.begin();
-    vector<FixDtmPtr>::const_iterator citrFixedEnd = m_vFixedDatum.end();
+    fixed_datum_ctor::const_iterator citrFixed = m_vFixedDatum.begin();
+    fixed_datum_ctor::const_iterator citrFixedEnd = m_vFixedDatum.end();
     for( ; citrFixed != citrFixedEnd; ++citrFixed )
     {
         ss << IndentString( ( *citrFixed )->GetAsString() );
     }
 
     ss << "Variable Datum\n";
-    vector<VarDtmPtr>::const_iterator citrVar = m_vVariableDatum.begin();
-    vector<VarDtmPtr>::const_iterator citrVarEnd = m_vVariableDatum.end();
+    var_datum_ctor::const_iterator citrVar = m_vVariableDatum.begin();
+    var_datum_ctor::const_iterator citrVarEnd = m_vVariableDatum.end();
     for( ; citrVar != citrVarEnd; ++citrVar )
     {
         ss << IndentString( ( *citrVar )->GetAsString() );
@@ -221,12 +241,12 @@ void Comment_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= true*/ ) t
     for( KUINT16 i = 0; i < m_ui32NumFixedDatum; ++i )
     {
         // Save the current write position so we can peek.
-        KUINT16 pos = stream.GetCurrentWritePosition();
+		KSIZE_T pos = stream.GetCurrentReadPosition();
         KUINT32 datumID;
 
         // Extract the datum id then reset the stream.
         stream >> datumID;
-        stream.SetCurrentWritePosition( pos );
+        stream.SetCurrentReadPosition( pos );
 
         // Use the factory decoder.
         FixedDatum * p = FixedDatum::FactoryDecode( datumID, stream );
@@ -239,7 +259,7 @@ void Comment_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= true*/ ) t
         else
         {
             // Default
-            m_vFixedDatum.push_back( FixDtmPtr( new FixedDatum( stream ) ) );
+            m_vFixedDatum.push_back( KDIS_MAKE_REF( FixedDatum, stream ) );
         }
     }
 
@@ -247,12 +267,12 @@ void Comment_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= true*/ ) t
     for( KUINT16 i = 0; i < m_ui32NumVariableDatum; ++i )
     {
         // Save the current write position so we can peek.
-        KUINT16 pos = stream.GetCurrentWritePosition();
+		KSIZE_T pos = stream.GetCurrentReadPosition();
         KUINT32 datumID;
 
         // Extract the datum id then reset the stream.
         stream >> datumID;
-        stream.SetCurrentWritePosition( pos );
+        stream.SetCurrentReadPosition( pos );
 
         // Use the factory decoder.
         VariableDatum * p = VariableDatum::FactoryDecode( datumID, stream );
@@ -265,7 +285,7 @@ void Comment_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= true*/ ) t
         else
         {
             // Default
-            m_vVariableDatum.push_back( VarDtmPtr( new VariableDatum( stream ) ) );
+            m_vVariableDatum.push_back( KDIS_MAKE_REF( VariableDatum, stream ) );
         }
     }
 }
@@ -289,15 +309,15 @@ void Comment_PDU::Encode( KDataStream & stream ) const
     stream << m_ui32NumFixedDatum
            << m_ui32NumVariableDatum;
 
-    vector<FixDtmPtr>::const_iterator citrFixed = m_vFixedDatum.begin();
-    vector<FixDtmPtr>::const_iterator citrFixedEnd = m_vFixedDatum.end();
+    fixed_datum_ctor::const_iterator citrFixed = m_vFixedDatum.begin();
+    fixed_datum_ctor::const_iterator citrFixedEnd = m_vFixedDatum.end();
     for( ; citrFixed != citrFixedEnd; ++citrFixed )
     {
         ( *citrFixed )->Encode( stream );
     }
 
-    vector<VarDtmPtr>::const_iterator citrVar = m_vVariableDatum.begin();
-    vector<VarDtmPtr>::const_iterator citrVarEnd = m_vVariableDatum.end();
+    var_datum_ctor::const_iterator citrVar = m_vVariableDatum.begin();
+    var_datum_ctor::const_iterator citrVarEnd = m_vVariableDatum.end();
     for( ; citrVar != citrVarEnd; ++citrVar )
     {
         ( *citrVar )->Encode( stream );

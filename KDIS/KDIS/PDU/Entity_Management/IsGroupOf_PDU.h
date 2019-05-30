@@ -59,8 +59,13 @@ namespace KDIS {
 
 namespace DATA_TYPE {
 
+#ifdef KDIS_CPP11
+    typedef std::shared_ptr<GED> GEDItem; // Ref counter
+#else
+    typedef KDIS::UTILS::KRef_Ptr<GED> GEDItem;
+#endif
+
 // Some PDU specific data types.
-typedef KDIS::UTILS::KRef_Ptr<GED> GEDItem;
 typedef std::vector<GEDItem> GEDList;
 
 } // END namespace DATA_TYPE

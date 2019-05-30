@@ -336,17 +336,30 @@ void Environmental_Process_PDU::Decode( KDataStream & stream, bool ignoreHeader 
     for( KUINT16 i = 0; i < m_ui16NumEnvRec; ++i )
     {
         // We now need to "peak" at the next 4 bytes to determine the Environment Record type,
-        // once we have determined the type we need to return the buffers write positon as this
+        // once we have determined the type we need to return the buffers write position as this
         // field needs to be re-read by the decode function of the derived Environment Record.
-        KUINT16 ui16CurrentWritePos = stream.GetCurrentWritePosition();
+		KSIZE_T ui16CurrentWritePos = stream.GetCurrentReadPosition();
 
         KUINT32 ui32RecType;
-        stream >> ui32RecType;
+        KUINT16 ui16RecLenBits;
+        stream >> ui32RecType
+               >> ui16RecLenBits;
 
         // We now know what type of record we should create, we need to reset the buffer so this value can be re-read.
-        stream.SetCurrentWritePosition( ui16CurrentWritePos );
+        stream.SetCurrentReadPosition( ui16CurrentWritePos );
 
-        m_vEnvRecords.push_back( EnvironmentRecord::FactoryDecodeEnvironmentRecord( stream ) );
+        try
+        {
+            m_vEnvRecords.push_back( EnvironmentRecord::FactoryDecodeEnvironmentRecord( stream ) );
+        }
+        catch( const std::exception& e )
+        {
+            // do nothing.
+        }
+
+        // We now know what type of record we should create, we need to reset the buffer so this value can be re-read.
+        stream.SetCurrentReadPosition( ui16CurrentWritePos + ui16RecLenBits/8 );
+
     }
 }
 

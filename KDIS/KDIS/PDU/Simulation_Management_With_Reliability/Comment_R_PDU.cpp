@@ -84,6 +84,14 @@ Comment_R_PDU::~Comment_R_PDU()
 
 //////////////////////////////////////////////////////////////////////////
 
+void KDIS::PDU::Comment_R_PDU::Clear( )
+{
+    __super::Clear( );
+    m_ui16PDULength = COMMENT_R_PDU_SIZE;
+}
+
+//////////////////////////////////////////////////////////////////////////
+
 KString Comment_R_PDU::GetAsString() const
 {
     KStringStream ss;

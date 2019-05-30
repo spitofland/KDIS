@@ -59,7 +59,11 @@ namespace DATA_TYPE {
 // pointer or one of your own then simply change it below.
 /************************************************************************/
 class VariableParameter;
+#ifdef KDIS_CPP11
+typedef std::shared_ptr<VariableParameter> VarPrmPtr; // Ref counter
+#else
 typedef KDIS::UTILS::KRef_Ptr<VariableParameter> VarPrmPtr; // Ref counter
+#endif
 //typedef VariableParameter* VarPrmPtr; // Weak ref
 
 using KDIS::DATA_TYPE::ENUMS::VariableParameterType;

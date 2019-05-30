@@ -81,6 +81,14 @@ Set_Data_PDU::~Set_Data_PDU()
 
 //////////////////////////////////////////////////////////////////////////
 
+void KDIS::PDU::Set_Data_PDU::Clear( )
+{
+    __super::Clear( );
+    m_ui16PDULength = SET_DATA_PDU_SIZE;
+}
+
+//////////////////////////////////////////////////////////////////////////
+
 KString Set_Data_PDU::GetAsString() const
 {
     KStringStream ss;

@@ -46,7 +46,7 @@ Fire_PDU::Fire_PDU()
 {
     m_ui8PDUType = Fire_PDU_Type;
     m_ui16PDULength = FIRE_PDU_SIZE;
-    SetDescriptor( DescPtr( new MunitionDescriptor() ) );
+    SetDescriptor( KDIS_MAKE_REF( MunitionDescriptor ) );
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -161,7 +161,7 @@ void Fire_PDU::SetDescriptor( DescPtr D )
     #if DIS_VERSION > 6
 
     // Determine the FTI
-    if( dynamic_cast<MunitionDescriptor*>( m_pDescriptor.GetPtr() ) )
+    if( dynamic_cast<MunitionDescriptor*>( m_pDescriptor.get() ) )
     {
         m_PDUStatusUnion.m_ui8PDUStatusFTI = MunitionFTI;
     }
@@ -256,7 +256,7 @@ void Fire_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= true*/ ) thro
 
     if( !m_pDescriptor.GetPtr() )
     {
-        m_pDescriptor = DescPtr( new MunitionDescriptor() );
+        m_pDescriptor = KDIS_MAKE_REF( MunitionDescriptor );
     }
 
     #else
@@ -264,9 +264,9 @@ void Fire_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= true*/ ) thro
     // If the protocol version is not 7 then treat it as a MunitionDesc
     if( m_ui8ProtocolVersion < 7 )
     {
-        if( !m_pDescriptor.GetPtr() )
+        if( !m_pDescriptor.get() )
         {
-            m_pDescriptor = DescPtr( new MunitionDescriptor() );
+            m_pDescriptor = KDIS_MAKE_REF( MunitionDescriptor );
         }
     }
     else // DIS 7
@@ -274,17 +274,17 @@ void Fire_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= true*/ ) thro
         if( m_PDUStatusUnion.m_ui8PDUStatusFTI == MunitionFTI )
         {
             // Create a descriptor if the desc is null or the incorrect type
-            if( !m_pDescriptor.GetPtr() || !dynamic_cast<MunitionDescriptor*>( m_pDescriptor.GetPtr() ) )
+            if( !m_pDescriptor.get() || !dynamic_cast<MunitionDescriptor*>( m_pDescriptor.get() ) )
             {
-                m_pDescriptor = DescPtr( new MunitionDescriptor() );
+                m_pDescriptor = KDIS_MAKE_REF( MunitionDescriptor );
             }
         }
         else
         {
             // Create a descriptor if the desc is null or the incorrect type
-            if( !m_pDescriptor.GetPtr() || !dynamic_cast<ExpendableDescriptor*>( m_pDescriptor.GetPtr() ) )
+            if( !m_pDescriptor.get() || !dynamic_cast<ExpendableDescriptor*>( m_pDescriptor.get() ) )
             {
-                m_pDescriptor = DescPtr( new ExpendableDescriptor() );
+                m_pDescriptor = KDIS_MAKE_REF( ExpendableDescriptor );
             }
         }
     }
@@ -315,7 +315,7 @@ void Fire_PDU::Encode( KDataStream & stream ) const
     stream << m_ui32FireMissionIndex
            << KDIS_STREAM m_Location;
 
-    if( !m_pDescriptor.GetPtr() )
+    if( !m_pDescriptor.get() )
     {
         // Create a temp to fill the buffer.
         MunitionDescriptor md;

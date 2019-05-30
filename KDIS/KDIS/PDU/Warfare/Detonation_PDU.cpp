@@ -53,7 +53,7 @@ Detonation_PDU::Detonation_PDU() :
 {
     m_ui8PDUType = Detonation_PDU_Type;
     m_ui16PDULength = DETONATION_PDU_SIZE;
-    SetDescriptor( DescPtr( new MunitionDescriptor() ) );
+    SetDescriptor( KDIS_MAKE_REF( MunitionDescriptor ) );
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -182,11 +182,11 @@ void Detonation_PDU::SetDescriptor( DescPtr D )
     #if DIS_VERSION > 6
 
     // Determine the FTI
-    if( dynamic_cast<MunitionDescriptor*>( m_pDescriptor.GetPtr() ) )
+    if( dynamic_cast<MunitionDescriptor*>( m_pDescriptor.get() ) )
     {
         m_PDUStatusUnion.m_ui8PDUStatusDTI_RAI_IAI = MunitionDTI;
     }
-    else if( dynamic_cast<ExpendableDescriptor*>( m_pDescriptor.GetPtr() ) )
+    else if( dynamic_cast<ExpendableDescriptor*>( m_pDescriptor.get() ) )
     {
         m_PDUStatusUnion.m_ui8PDUStatusDTI_RAI_IAI = ExpendableDTI;
         m_ui8ProtocolVersion = IEEE_1278_1_2012; // We are using a DIS 7 feature now.
@@ -335,7 +335,7 @@ void Detonation_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= true*/ 
 
     if( !m_pDescriptor.GetPtr() )
     {
-        m_pDescriptor = DescPtr( new MunitionDescriptor() );
+        m_pDescriptor = KDIS_MAKE_REF( MunitionDescriptor );
     }
 
     #else
@@ -343,9 +343,9 @@ void Detonation_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= true*/ 
     // If the protocol version is not 7 then treat it as a MunitionDesc
     if( m_ui8ProtocolVersion < 7 )
     {
-        if( !m_pDescriptor.GetPtr() )
+        if( !m_pDescriptor.get() )
         {
-            m_pDescriptor = DescPtr( new MunitionDescriptor() );
+            m_pDescriptor = KDIS_MAKE_REF( MunitionDescriptor );
         }
     }
     else // DIS 7
@@ -353,25 +353,25 @@ void Detonation_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= true*/ 
         if( m_PDUStatusUnion.m_ui8PDUStatusDTI_RAI_IAI == MunitionDTI ) // Munition
         {
             // Create a descriptor if the desc is null or the incorrect type
-            if( !m_pDescriptor.GetPtr() || !dynamic_cast<MunitionDescriptor*>( m_pDescriptor.GetPtr() ) )
+            if( !m_pDescriptor.get() || !dynamic_cast<MunitionDescriptor*>( m_pDescriptor.get() ) )
             {
-                m_pDescriptor = DescPtr( new MunitionDescriptor() );
+                m_pDescriptor = KDIS_MAKE_REF( MunitionDescriptor );
             }
         }
         else if( m_PDUStatusUnion.m_ui8PDUStatusDTI_RAI_IAI == ExpendableDTI ) // Expendable
         {
             // Create a descriptor if the desc is null or the incorrect type
-            if( !m_pDescriptor.GetPtr() || !dynamic_cast<ExpendableDescriptor*>( m_pDescriptor.GetPtr() ) )
+            if( !m_pDescriptor.get() || !dynamic_cast<ExpendableDescriptor*>( m_pDescriptor.get() ) )
             {
-                m_pDescriptor = DescPtr( new ExpendableDescriptor() );
+                m_pDescriptor = KDIS_MAKE_REF( ExpendableDescriptor );
             }
         }
         else // Explosion
         {
             // Create a descriptor if the desc is null or the incorrect type
-            if( !m_pDescriptor.GetPtr() || !dynamic_cast<ExplosionDescriptor*>( m_pDescriptor.GetPtr() ) )
+            if( !m_pDescriptor.get() || !dynamic_cast<ExplosionDescriptor*>( m_pDescriptor.get() ) )
             {
-                m_pDescriptor = DescPtr( new ExplosionDescriptor() );
+                m_pDescriptor = KDIS_MAKE_REF( ExplosionDescriptor );
             }
         }
     }
@@ -387,12 +387,12 @@ void Detonation_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= true*/ 
     for( KUINT8 i = 0; i < m_ui8NumOfVariableParams; ++i )
     {
         // Save the current write position so we can peek.
-        KUINT16 pos = stream.GetCurrentWritePosition();
+		KSIZE_T pos = stream.GetCurrentReadPosition();
         KUINT8 paramTyp;
 
         // Extract the  type then reset the stream.
         stream >> paramTyp;
-        stream.SetCurrentWritePosition( pos );
+        stream.SetCurrentReadPosition( pos );
 
         // Use the factory decoder.
         VariableParameter * p = VariableParameter::FactoryDecode( paramTyp, stream );
@@ -408,15 +408,15 @@ void Detonation_PDU::Decode( KDataStream & stream, bool ignoreHeader /*= true*/ 
             switch( paramTyp )
             {
                 case ArticulatedPartType:
-                    m_vVariableParameters.push_back( VarPrmPtr( new ArticulatedPart( stream ) ) );
+                    m_vVariableParameters.push_back( KDIS_MAKE_REF( ArticulatedPart, stream ) );
                     break;
 
                 case AttachedPartType:
-                    m_vVariableParameters.push_back( VarPrmPtr( new AttachedPart( stream ) ) );
+                    m_vVariableParameters.push_back( KDIS_MAKE_REF( AttachedPart, stream ) );
                     break;
 
                 default:
-                    m_vVariableParameters.push_back( VarPrmPtr( new VariableParameter( stream ) ) );
+                    m_vVariableParameters.push_back( KDIS_MAKE_REF( VariableParameter, stream ) );
                     break;
             }
         }
@@ -443,7 +443,7 @@ void Detonation_PDU::Encode( KDataStream & stream ) const
     stream << KDIS_STREAM m_Velocity
            << KDIS_STREAM m_LocationWorldCoords;
 
-    if( !m_pDescriptor.GetPtr() )
+    if( !m_pDescriptor.get() )
     {
         // Create a temp to fill the buffer.
         MunitionDescriptor md;
